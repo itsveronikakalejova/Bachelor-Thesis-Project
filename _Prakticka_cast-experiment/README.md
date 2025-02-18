@@ -1,0 +1,1 @@
+# Platforma pre zdielanie projektov - Flutter aplikacia
