@@ -42,7 +42,7 @@ class ProjectPage extends StatefulWidget {
         String message;
 
         if (response.statusCode == 200) {
-          message = "Output:\n${responseData['output']}";
+          message = "${responseData['output']}";
         } else {
           message = "Error:\n${responseData['error']}";
         }
@@ -61,7 +61,7 @@ class ProjectPage extends StatefulWidget {
           backgroundColor: Colors.black, // Nastavenie čierneho pozadia
           title: const Text(
             "Compilation Output",
-            style: TextStyle(color: Colors.blue), // Modrý text pre názov
+            style: TextStyle(color: Colors.green), // Modrý text pre názov
           ),
           content: SingleChildScrollView(
             child: Text(
@@ -231,80 +231,85 @@ class ProjectPage extends StatefulWidget {
       ),
     );
   }
-
+  
   void _showShareDialog(BuildContext context) {
-    String selectedPrivilege = 'Can View';
-    String selectedPerson = 'Majo';
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Share Project'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Add People:'),
-              DropdownButton<String>(
-                value: selectedPerson,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedPerson = newValue!;
-                  });
-                },
-                items: <String>['Majo', 'Peto', 'Jano']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              const Text('Select Privileges:'),
-              DropdownButton<String>(
-                value: selectedPrivilege,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedPrivilege = newValue!;
-                  });
-                },
-                items: <String>['Can Edit', 'Can View']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        String selectedPrivilege = 'Can View';
+        String selectedPerson = 'Majo';
+
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: const Text('Share Project'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                'Project shared with $selectedPerson as $selectedPrivilege')),
+                  const Text('Add People:'),
+                  DropdownButton<String>(
+                    value: selectedPerson,
+                    onChanged: (String? newValue) {
+                      setDialogState(() {
+                        selectedPerson = newValue!;
+                      });
+                    },
+                    items: <String>['Majo', 'Peto', 'Jano']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
                       );
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Share'),
+                    }).toList(),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
+                  const SizedBox(height: 16),
+                  const Text('Select Privileges:'),
+                  DropdownButton<String>(
+                    value: selectedPrivilege,
+                    onChanged: (String? newValue) {
+                      setDialogState(() {
+                        selectedPrivilege = newValue!;
+                      });
                     },
-                    child: const Text('Cancel'),
+                    items: <String>['Can Edit', 'Can View']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    'Project shared with $selectedPerson as $selectedPrivilege')),
+                          );
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Share'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
+
 }
