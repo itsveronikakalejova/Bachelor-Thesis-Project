@@ -1,0 +1,2 @@
+C:/Users/itsve/Videos/Experiment/_Prakticka_cast-experiment/sesh/android/app/.cxx/Debug/5s593y29/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/itsve/Videos/Experiment/_Prakticka_cast-experiment/sesh/android/app/.cxx/Debug/5s593y29/x86_64/CMakeFiles/rebuild_cache.dir
