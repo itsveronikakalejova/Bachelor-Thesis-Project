@@ -4,7 +4,6 @@ import 'package:sesh/screens/login.dart';
 import 'package:sesh/screens/projects.dart';
 import 'package:sesh/screens/tasks.dart';
 import 'package:sesh/screens/project.dart';
-final url = Uri.parse('http://127.0.0.1:8000/api/projects/');
 
 
 void main() {

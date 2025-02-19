@@ -33,31 +33,62 @@ class ProjectPage extends StatefulWidget {
 
       try {
         final response = await http.post(
-          Uri.parse('http://127.0.0.1:2000/submit_code'),
+          Uri.parse(apiUrl),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({"code": code}),
         );
 
-
-        print("Status code: ${response.statusCode}");
-        print("Response body: ${response.body}");
+        final responseData = jsonDecode(response.body);
+        String message;
 
         if (response.statusCode == 200) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Code sent successfully!')),
-          );
+          message = "Output:\n${responseData['output']}";
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed: ${response.body}')),
-          );
+          message = "Error:\n${responseData['error']}";
         }
+
+        _showOutputDialog(context, message);
       } catch (error) {
-        print("Error sending code: $error");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $error')),
-        );
+        _showOutputDialog(context, 'Error: $error');
       }
     }
+
+  void _showOutputDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.black, // Nastavenie čierneho pozadia
+          title: const Text(
+            "Compilation Output",
+            style: TextStyle(color: Colors.blue), // Modrý text pre názov
+          ),
+          content: SingleChildScrollView(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white, // Modrý text pre výstup
+                fontFamily: 'monospace', // Konzolový vzhľad písma
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                "Close",
+                style: TextStyle(color: Colors.blue), // Modrý text pre tlačidlo
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
