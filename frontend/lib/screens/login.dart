@@ -8,7 +8,7 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final emailController = TextEditingController();
+    final usernameController = TextEditingController();
     final passwordController = TextEditingController();
 
     return Scaffold(
@@ -53,11 +53,11 @@ class LoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   TextField(
-                    controller: emailController,
+                    controller: usernameController,
                     decoration: const InputDecoration(
-                      labelText: 'Email',
+                      labelText: 'Username',
                       border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: Icon(Icons.person),
                     ),
                     keyboardType: TextInputType.emailAddress,
                   ),
@@ -74,12 +74,12 @@ class LoginPage extends StatelessWidget {
                   const SizedBox(height: 16.0),
                   ElevatedButton(
                     onPressed: () {
-                      final email = emailController.text;
+                      final username = usernameController.text;
                       final password = passwordController.text;
 
-                      if (email.isNotEmpty && password.isNotEmpty) {
+                      if (username.isNotEmpty && password.isNotEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Logged in as $email')),
+                          SnackBar(content: Text('Logged in as $username')),
                         );
 
                         Navigator.push(

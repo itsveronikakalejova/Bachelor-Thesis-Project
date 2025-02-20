@@ -118,7 +118,7 @@ Widget _buildProjectTile(String projectName) {
         icon: const Icon(Icons.more_vert, color: Colors.black),
         onSelected: (String value) {
           if (value == 'delete') {
-            _deleteProject(projectName);
+            deleteProject(projectName);
           } else if (value == 'share') {
             _showShareDialog(context, projectName);
           }
@@ -141,15 +141,6 @@ Widget _buildProjectTile(String projectName) {
       },
     ),
   );
-}
-
-void _deleteProject(String projectName) {
-  setState(() {
-    projects.remove(projectName);
-  });
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text('$projectName deleted'),
-  ));
 }
 
   void _showAddProjectDialog() {
@@ -196,75 +187,123 @@ void _deleteProject(String projectName) {
       content: Text('$projectName shared'),
     ));
 
-    showDialog(
+   showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Share Project'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Add People:'),
-              DropdownButton<String>(
-                value: selectedPerson,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedPerson = newValue!;
-                  });
-                },
-                items: <String>['Majo', 'Peto', 'Jano']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              const Text('Select Privileges:'),
-              DropdownButton<String>(
-                value: selectedPrivilege,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    selectedPrivilege = newValue!;
-                  });
-                },
-                items: <String>['Can Edit', 'Can View']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        String selectedPrivilege = 'Can View';
+        String selectedPerson = 'Majo';
+
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: const Text('Share Project'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                'Project shared with $selectedPerson as $selectedPrivilege')),
+                  const Text('Add People:'),
+                  DropdownButton<String>(
+                    value: selectedPerson,
+                    onChanged: (String? newValue) {
+                      setDialogState(() {
+                        selectedPerson = newValue!;
+                      });
+                    },
+                    items: <String>['Majo', 'Peto', 'Jano']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
                       );
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Share'),
+                    }).toList(),
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
+                  const SizedBox(height: 16),
+                  const Text('Select Privileges:'),
+                  DropdownButton<String>(
+                    value: selectedPrivilege,
+                    onChanged: (String? newValue) {
+                      setDialogState(() {
+                        selectedPrivilege = newValue!;
+                      });
                     },
-                    child: const Text('Cancel'),
+                    items: <String>['Can Edit', 'Can View']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    'Project shared with $selectedPerson as $selectedPrivilege')),
+                          );
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Share'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
+  }
+
+  Future<bool> _showDeleteProjectDialog(String projectName) async {
+    bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: Text('Are you sure you want to delete the project: ${projectName}?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    return shouldDelete ?? false;
+  }
+
+  Future<void> deleteProject(String projectName) async {
+    bool delete = await _showDeleteProjectDialog(projectName);
+    
+    if (delete == true) {
+      setState(() {
+        projects.remove(projectName);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('$projectName deleted'),
+    ));
+    }
   }
 }
