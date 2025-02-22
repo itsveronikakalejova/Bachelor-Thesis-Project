@@ -38,14 +38,17 @@ class ProjectPage extends StatefulWidget {
           body: jsonEncode({"code": code}),
         );
 
-        final responseData = jsonDecode(response.body);
-        String message;
+      final responseData = jsonDecode(response.body);
+      String message;
 
-        if (response.statusCode == 200) {
-          message = "${responseData['output']}";
-        } else {
-          message = "Error:\n${responseData['error']}";
-        }
+      if (response.statusCode == 200) {
+        message = responseData['output'] ?? "No output received";
+      } else {
+        message = responseData.containsKey('error')
+            ? "Compilation Error:\n${responseData['error']}"
+            : "Unknown error occurred.";
+      }
+
 
         _showOutputDialog(context, message);
       } catch (error) {

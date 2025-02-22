@@ -180,9 +180,6 @@ Widget _buildProjectTile(String projectName) {
   }
   
    void _showShareDialog(BuildContext context, String projectName) {
-    String selectedPrivilege = 'Can View';
-    String selectedPerson = 'Majo';
-
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('$projectName shared'),
     ));
@@ -272,7 +269,7 @@ Widget _buildProjectTile(String projectName) {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Confirm Deletion'),
-          content: Text('Are you sure you want to delete the project: ${projectName}?'),
+          content: Text('Are you sure you want to delete the project: $projectName?'),
           actions: [
             TextButton(
               onPressed: () {
