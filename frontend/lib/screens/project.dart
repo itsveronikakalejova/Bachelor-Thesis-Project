@@ -13,6 +13,7 @@ class ProjectPage extends StatefulWidget {
 
   class _ProjectPageState extends State<ProjectPage> {
     final TextEditingController _contentController = TextEditingController();
+    final TextEditingController _inputController = TextEditingController();
 
     @override
     void dispose() {
@@ -22,6 +23,8 @@ class ProjectPage extends StatefulWidget {
 
     void _sendCodeToServer() async {
       final String code = _contentController.text;
+      final String input = _inputController.text; // Get user input
+
       if (code.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Code field is empty!')),
@@ -35,26 +38,29 @@ class ProjectPage extends StatefulWidget {
         final response = await http.post(
           Uri.parse(apiUrl),
           headers: {"Content-Type": "application/json"},
-          body: jsonEncode({"code": code}),
+          body: jsonEncode({
+            "code": code,
+            "input": input // Send input to backend
+          }),
         );
 
-      final responseData = jsonDecode(response.body);
-      String message;
+        final responseData = jsonDecode(response.body);
+        String message;
 
-      if (response.statusCode == 200) {
-        message = responseData['output'] ?? "No output received";
-      } else {
-        message = responseData.containsKey('error')
-            ? "Compilation Error:\n${responseData['error']}"
-            : "Unknown error occurred.";
-      }
-
+        if (response.statusCode == 200) {
+          message = responseData['output'] ?? "No output received";
+        } else {
+          message = responseData.containsKey('error')
+              ? "Compilation Error:\n${responseData['error']}"
+              : "Unknown error occurred.";
+        }
 
         _showOutputDialog(context, message);
       } catch (error) {
         _showOutputDialog(context, 'Error: $error');
       }
     }
+
 
   void _showOutputDialog(BuildContext context, String message) {
     showDialog(
@@ -185,24 +191,47 @@ class ProjectPage extends StatefulWidget {
                     color: const Color.fromARGB(255, 55, 63, 59),
                     padding: const EdgeInsets.all(16.0),
                     alignment: Alignment.topLeft,
-                    child: TextField(
-                      controller: _contentController,
-                      maxLines: null,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontFamily: 'monospace',
-                      ),
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Type your code here...',
-                        hintStyle: TextStyle(color: Colors.grey),
-                      ),
-                      textAlignVertical: TextAlignVertical.top,
-                      keyboardType: TextInputType.multiline,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _contentController,
+                            maxLines: null,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontFamily: 'monospace',
+                            ),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              hintText: 'Type your code here...',
+                              hintStyle: TextStyle(color: Colors.grey),
+                            ),
+                            textAlignVertical: TextAlignVertical.top,
+                            keyboardType: TextInputType.multiline,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _inputController,
+                          maxLines: null,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontFamily: 'monospace',
+                          ),
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'Enter program input here...',
+                            hintStyle: TextStyle(color: Colors.grey),
+                          ),
+                          keyboardType: TextInputType.multiline,
+                        ),
+                      ],
                     ),
                   ),
                 ),
+
               ],
             ),
           ),
