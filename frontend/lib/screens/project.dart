@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sesh/widgets/sideBar.dart';
-
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -11,93 +11,54 @@ class ProjectPage extends StatefulWidget {
   _ProjectPageState createState() => _ProjectPageState();
 }
 
-  class _ProjectPageState extends State<ProjectPage> {
-    final TextEditingController _contentController = TextEditingController();
-    final TextEditingController _inputController = TextEditingController();
+class _ProjectPageState extends State<ProjectPage> {
+  late IO.Socket socket;
+  final TextEditingController _contentController = TextEditingController();
+  final TextEditingController _inputController = TextEditingController();
+  final String documentId = "project123"; // Unikátne ID dokumentu
 
-    @override
-    void dispose() {
-      _contentController.dispose();
-      super.dispose();
-    }
-
-    void _sendCodeToServer() async {
-      final String code = _contentController.text;
-      final String input = _inputController.text; // Get user input
-
-      if (code.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Code field is empty!')),
-        );
-        return;
-      }
-
-      const String apiUrl = "http://127.0.0.1:2000/submit_code";
-
-      try {
-        final response = await http.post(
-          Uri.parse(apiUrl),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode({
-            "code": code,
-            "input": input // Send input to backend
-          }),
-        );
-
-        final responseData = jsonDecode(response.body);
-        String message;
-
-        if (response.statusCode == 200) {
-          message = responseData['output'] ?? "No output received";
-        } else {
-          message = responseData.containsKey('error')
-              ? "Compilation Error:\n${responseData['error']}"
-              : "Unknown error occurred.";
-        }
-
-        _showOutputDialog(context, message);
-      } catch (error) {
-        _showOutputDialog(context, 'Error: $error');
-      }
-    }
-
-
-  void _showOutputDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.black, // Nastavenie čierneho pozadia
-          title: const Text(
-            "Compilation Output",
-            style: TextStyle(color: Colors.green), // Modrý text pre názov
-          ),
-          content: SingleChildScrollView(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: Colors.white, // Modrý text pre výstup
-                fontFamily: 'monospace', // Konzolový vzhľad písma
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                "Close",
-                style: TextStyle(color: Colors.blue), // Modrý text pre tlačidlo
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  @override
+  void initState() {
+    super.initState();
+    _connectToSocket();
   }
 
+  void _connectToSocket() {
+    socket = IO.io("http://localhost:3000", <String, dynamic>{
+      "transports": ["websocket"],
+      "autoConnect": false,
+    });
 
+    socket.connect();
+
+    socket.onConnect((_) {
+      socket.emit("join-document", documentId);
+    });
+
+    socket.on("load-document", (data) {
+      setState(() {
+        _contentController.text = data;
+      });
+    });
+
+    socket.on("update-document", (content) {
+      setState(() {
+        _contentController.text = content;
+      });
+    });
+  }
+
+  void _sendTextUpdate(String text) {
+    socket.emit("update-document", {"docId": documentId, "content": text});
+  }
+
+  @override
+  void dispose() {
+    _contentController.dispose();
+    _inputController.dispose();
+    socket.disconnect();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,9 +80,7 @@ class ProjectPage extends StatefulWidget {
         backgroundColor: Colors.white,
         title: const Text(
           'IPC Project',
-          style: TextStyle(
-            color: Colors.black,
-          ),
+          style: TextStyle(color: Colors.black),
         ),
         actions: [
           TextButton(
@@ -146,7 +105,9 @@ class ProjectPage extends StatefulWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: _sendCodeToServer,
+                  onPressed: () {
+                    
+                  },
                   child: const Text(
                     'Compile and Run',
                     style: TextStyle(color: Colors.black),
@@ -207,31 +168,15 @@ class ProjectPage extends StatefulWidget {
                               hintText: 'Type your code here...',
                               hintStyle: TextStyle(color: Colors.grey),
                             ),
+                            onChanged: _sendTextUpdate,
                             textAlignVertical: TextAlignVertical.top,
                             keyboardType: TextInputType.multiline,
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _inputController,
-                          maxLines: null,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontFamily: 'monospace',
-                          ),
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            hintText: 'Enter program input here...',
-                            hintStyle: TextStyle(color: Colors.grey),
-                          ),
-                          keyboardType: TextInputType.multiline,
                         ),
                       ],
                     ),
                   ),
                 ),
-
               ],
             ),
           ),
@@ -263,82 +208,14 @@ class ProjectPage extends StatefulWidget {
       ),
     );
   }
-  
+
   void _showShareDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        String selectedPrivilege = 'Can View';
-        String selectedPerson = 'Majo';
-
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setDialogState) {
-            return AlertDialog(
-              title: const Text('Share Project'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Add People:'),
-                  DropdownButton<String>(
-                    value: selectedPerson,
-                    onChanged: (String? newValue) {
-                      setDialogState(() {
-                        selectedPerson = newValue!;
-                      });
-                    },
-                    items: <String>['Majo', 'Peto', 'Jano']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Select Privileges:'),
-                  DropdownButton<String>(
-                    value: selectedPrivilege,
-                    onChanged: (String? newValue) {
-                      setDialogState(() {
-                        selectedPrivilege = newValue!;
-                      });
-                    },
-                    items: <String>['Can Edit', 'Can View']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(
-                                    'Project shared with $selectedPerson as $selectedPrivilege')),
-                          );
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('Share'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('Cancel'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
+        return const AlertDialog(
+          title: Text('Share Project'),
+          content: Text('Sharing feature coming soon!'),
         );
       },
     );
