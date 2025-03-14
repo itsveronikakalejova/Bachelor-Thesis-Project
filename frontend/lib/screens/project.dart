@@ -3,6 +3,7 @@ import 'package:sesh/widgets/sideBar.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:sesh/widgets/shareDialog.dart';
 
 class ProjectPage extends StatefulWidget {
   const ProjectPage({super.key});
@@ -116,7 +117,7 @@ class _ProjectPageState extends State<ProjectPage> {
                 const SizedBox(width: 16),
                 TextButton(
                   onPressed: () {
-                    _showShareDialog(context);
+                    showShareDialog(context); 
                   },
                   child: const Text(
                     'Share',
@@ -161,7 +162,7 @@ class _ProjectPageState extends State<ProjectPage> {
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
-                              fontFamily: 'monospace',
+                              fontFamily: 'Courier New',
                             ),
                             decoration: const InputDecoration(
                               border: InputBorder.none,
@@ -206,18 +207,6 @@ class _ProjectPageState extends State<ProjectPage> {
         ),
         onTap: () {},
       ),
-    );
-  }
-
-  void _showShareDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return const AlertDialog(
-          title: Text('Share Project'),
-          content: Text('Sharing feature coming soon!'),
-        );
-      },
     );
   }
 }

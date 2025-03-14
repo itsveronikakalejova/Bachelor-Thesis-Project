@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sesh/widgets/colors.dart';
 import 'login.dart';
+import 'package:sesh/screens/authService.dart';
 import 'projects.dart';
 
 class RegisterPage extends StatelessWidget {
@@ -11,6 +12,7 @@ class RegisterPage extends StatelessWidget {
     final usernameController = TextEditingController();
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
+    final authService = AuthService();
 
     return Scaffold(
       appBar: AppBar(
@@ -82,37 +84,36 @@ class RegisterPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       final username = usernameController.text;
                       final email = emailController.text;
                       final password = passwordController.text;
 
-                      if (username.isNotEmpty &&
-                          email.isNotEmpty &&
-                          password.isNotEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text('Account created for $username')),
-                        );
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProjectsPage(),
-                          ),
-                        );
+                      if (username.isNotEmpty && email.isNotEmpty && password.isNotEmpty) {
+                        bool registered = await authService.register(username, email, password);
+                        if (registered) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Account created for $username')),
+                          );
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Registration failed')),
+                          );
+                        }
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Please fill in all fields')),
+                          const SnackBar(content: Text('Please fill in all fields')),
                         );
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: myBlack,
-                      foregroundColor: myWhite,
-                    ),
                     child: const Text('Register'),
                   ),
+
                   const SizedBox(height: 16.0),
                   TextButton(
                     onPressed: () {

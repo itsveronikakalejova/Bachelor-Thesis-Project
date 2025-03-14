@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sesh/screens/register.dart';
 import 'package:sesh/screens/projects.dart';
 import 'package:sesh/widgets/colors.dart';
+import 'package:sesh/screens/authService.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -10,6 +11,7 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final usernameController = TextEditingController();
     final passwordController = TextEditingController();
+    final authService = AuthService();
 
     return Scaffold(
       appBar: AppBar(
@@ -73,32 +75,32 @@ class LoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       final username = usernameController.text;
                       final password = passwordController.text;
 
                       if (username.isNotEmpty && password.isNotEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Logged in as $username')),
-                        );
+                        final token = await authService.login(username, password);
+                        if (token != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Logged in as $username')),
+                          );
 
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProjectsPage(),
-                          ),
-                        );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ProjectsPage()),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Invalid credentials')),
+                          );
+                        }
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Please fill in all fields')),
+                          const SnackBar(content: Text('Please fill in all fields')),
                         );
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: myBlack,
-                      foregroundColor: myWhite,
-                    ),
                     child: const Text('Login'),
                   ),
                   const SizedBox(height: 16.0),

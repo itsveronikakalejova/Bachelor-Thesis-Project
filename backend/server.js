@@ -3,6 +3,8 @@ const http = require("http");
 const cors = require("cors");
 const routes = require("./routes"); // API endpointy
 const { initializeSocket } = require("./socket"); // Socket.IO logika
+const bodyParser = require('body-parser');
+const authRoutes = require('./authRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -12,6 +14,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(routes); // Registrácia API endpointov
+app.use(bodyParser.json());
+app.use('/auth', authRoutes);
 
 initializeSocket(server); // Inicializácia Socket.IO
 
