@@ -12,4 +12,21 @@ db.connect(err => {
     else console.log("Pripojené k MySQL");
 });
 
-module.exports = db;
+// Funkcia na získanie zoznamu používateľov
+const getUsers = (callback) => {
+    const sql = "SELECT username FROM users"; // Získame mená používateľov
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error("Chyba pri získavaní používateľov:", err);
+            callback(err, null);
+        } else {
+            const users = results.map(user => user.username);
+            callback(null, users);
+        }
+    });
+};
+
+module.exports = {
+    db,
+    getUsers
+};

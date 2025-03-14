@@ -5,6 +5,7 @@ const routes = require("./routes"); // API endpointy
 const { initializeSocket } = require("./socket"); // Socket.IO logika
 const bodyParser = require('body-parser');
 const authRoutes = require('./authRoutes');
+const userRoutes = require('./userRoutes'); 
 
 const app = express();
 const server = http.createServer(app);
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use(routes); // Registrácia API endpointov
 app.use(bodyParser.json());
 app.use('/auth', authRoutes);
+app.use('/api', userRoutes); // Použi nový router na /api
 
 initializeSocket(server); // Inicializácia Socket.IO
 
