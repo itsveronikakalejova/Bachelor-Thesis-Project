@@ -2,22 +2,22 @@ const mysql = require('mysql2');
 
 const db = mysql.createConnection({
     host: 'localhost',
-    user: 'root', // Tvoj MySQL používateľ
-    password: '', // Tvoje MySQL heslo
-    database: 'project_db' // Tvoja databáza
+    user: 'root',
+    password: '', 
+    database: 'project_db'
 });
 
 db.connect(err => {
     if (err) console.error("Chyba pripojenia k DB:", err);
-    else console.log("Pripojené k MySQL");
+    else console.log("Pripojene k MySQL.");
 });
 
-// Funkcia na získanie zoznamu používateľov
+// funkcia na ziskanie zoznamu pouzivatelov
 const getUsers = (callback) => {
-    const sql = "SELECT username FROM users"; // Získame mená používateľov
+    const sql = "SELECT username FROM users";
     db.query(sql, (err, results) => {
         if (err) {
-            console.error("Chyba pri získavaní používateľov:", err);
+            console.error("Chyba pri ziskavani pouzivatelov:", err);
             callback(err, null);
         } else {
             const users = results.map(user => user.username);

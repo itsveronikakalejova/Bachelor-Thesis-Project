@@ -1,24 +1,24 @@
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
-const routes = require("./routes"); // API endpointy
-const { initializeSocket } = require("./socket"); // Socket.IO logika
+const routes = require("./controllers/routes");
+const { initializeSocket } = require("./controllers/socket"); 
 const bodyParser = require('body-parser');
-const authRoutes = require('./authRoutes');
-const userRoutes = require('./userRoutes'); 
+const authRoutes = require('./database/authRoutes');
+const userRoutes = require('./database/userRoutes'); 
 
 const app = express();
 const server = http.createServer(app);
 app.use(cors({
-    origin: "*",  // Alebo špecifické povolené domény
+    origin: "*",
     methods: ["GET", "POST"],
 }));
 app.use(express.json());
-app.use(routes); // Registrácia API endpointov
+app.use(routes); 
 app.use(bodyParser.json());
 app.use('/auth', authRoutes);
-app.use('/api', userRoutes); // Použi nový router na /api
+app.use('/api', userRoutes); 
 
-initializeSocket(server); // Inicializácia Socket.IO
+initializeSocket(server); 
 
-server.listen(3000, () => console.log("Server running on port 3000"));
+server.listen(3000, () => console.log("Server bezi na porte 3000."));

@@ -16,7 +16,7 @@ class _ProjectPageState extends State<ProjectPage> {
   late IO.Socket socket;
   final TextEditingController _contentController = TextEditingController();
   final TextEditingController _inputController = TextEditingController();
-  final String documentId = "project123"; // Unikátne ID dokumentu
+  final String documentId = "project123"; 
 
   @override
   void initState() {

@@ -23,7 +23,7 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['token']; // Vracia JWT token
+      return data['token'];
     }
     return null;
   }

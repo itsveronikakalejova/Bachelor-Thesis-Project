@@ -15,13 +15,13 @@ void showShareDialog(BuildContext context) {
         List<dynamic> data = jsonDecode(response.body);
         users = List<String>.from(data);
         if (users.isNotEmpty) {
-          selectedPerson = users.first; // Predvolene prvý používateľ
+          selectedPerson = users.first; 
         }
       } else {
-        print("Chyba pri načítaní používateľov: ${response.statusCode}");
+        print("Error while fetching users: ${response.statusCode}");
       }
     } catch (e) {
-      print("Chyba pri pripojení k serveru: $e");
+      print("Error connecting to the server: $e");
     }
   }
 
@@ -40,7 +40,7 @@ void showShareDialog(BuildContext context) {
                 }
 
                 if (users.isEmpty) {
-                  return const Text("Žiadni používatelia na zdieľanie");
+                  return const Text("No users found");
                 }
 
                 return Column(

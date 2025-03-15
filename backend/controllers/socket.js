@@ -1,6 +1,6 @@
 const { Server } = require("socket.io");
 
-let documents = {}; // Pamäť na kódy (nahraditeľné DB)
+let documents = {}; 
 
 function initializeSocket(server) {
     const io = new Server(server, {
@@ -11,7 +11,7 @@ function initializeSocket(server) {
     });
 
     io.on("connection", (socket) => {
-        console.log("User connected:", socket.id);
+        console.log("Pripojeny pouzivatel:", socket.id);
 
         socket.on("join-document", (docId) => {
             socket.join(docId);
@@ -29,7 +29,7 @@ function initializeSocket(server) {
         });
 
         socket.on("disconnect", () => {
-            console.log("User disconnected:", socket.id);
+            console.log("Odpojeny pouzivatel:", socket.id);
         });
     });
 }
