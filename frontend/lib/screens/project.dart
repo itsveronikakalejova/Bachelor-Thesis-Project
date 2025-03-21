@@ -22,11 +22,14 @@ class _ProjectPageState extends State<ProjectPage> {
   late IO.Socket socket;
   final TextEditingController _contentController = TextEditingController();
   bool isLoading = false;
+  List<Map<String, dynamic>> projectFiles = [];
+  String currentFileName = 'text_input.txt';
 
   @override
   void initState() {
     super.initState();
     _connectToSocket();
+    _fetchProjectFiles();
   }
 
   void _connectToSocket() {
@@ -58,6 +61,46 @@ class _ProjectPageState extends State<ProjectPage> {
     socket.emit("update-document", {"docId": widget.projectId, "content": text});
   }
 
+  Future<void> _fetchProjectFiles() async {
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/projects/${widget.projectId}/files'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        projectFiles = List<Map<String, dynamic>>.from(jsonDecode(response.body));
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to fetch project files')),
+      );
+    }
+  }
+
+  Future<void> _fetchFileContent(int fileId, String fileName) async {
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/projects/${widget.projectId}/files/$fileId'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        _contentController.text = data['fileData'];
+        currentFileName = fileName;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to fetch file content')),
+      );
+    }
+  }
+
   Future<void> saveTextInput() async {
     final text = _contentController.text;
 
@@ -70,6 +113,7 @@ class _ProjectPageState extends State<ProjectPage> {
       body: jsonEncode({
         'text': text,
         'uploadedBy': widget.userId.toString(), // Use userId instead of username
+        'fileName': currentFileName,
       }),
     );
 
@@ -77,11 +121,82 @@ class _ProjectPageState extends State<ProjectPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Text input saved successfully')),
       );
+      _fetchProjectFiles(); // Refresh the file list
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to save text input')),
       );
     }
+  }
+
+  Future<void> addFileToDatabase(String fileName) async {
+    final text = _contentController.text;
+
+    final response = await http.post(
+      Uri.parse('http://localhost:3000/projects/${widget.projectId}/files'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${widget.token}',
+      },
+      body: jsonEncode({
+        'fileName': fileName,
+        'fileType': 'text/x-c',
+        'fileData': text,
+        'uploadedBy': widget.userId.toString(), // Use userId instead of username
+      }),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('File added successfully')),
+      );
+      _fetchProjectFiles(); // Refresh the file list
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to add file')),
+      );
+    }
+  }
+
+  void _showAddFileDialog() {
+    final TextEditingController fileNameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add File'),
+          content: TextField(
+            controller: fileNameController,
+            decoration: const InputDecoration(
+              labelText: 'File Name',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final fileName = fileNameController.text;
+                if (fileName.isNotEmpty) {
+                  addFileToDatabase(fileName);
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('File name cannot be empty')),
+                  );
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -90,7 +205,6 @@ class _ProjectPageState extends State<ProjectPage> {
     socket.disconnect();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -133,36 +247,46 @@ class _ProjectPageState extends State<ProjectPage> {
             color: const Color.fromARGB(255, 214, 243, 243),
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton(
-                  onPressed: () {
-                    // Compile and Run action
-                  },
+                  onPressed: _showAddFileDialog,
                   child: const Text(
-                    'Compile and Run',
+                    'Add File',
                     style: TextStyle(color: Colors.black),
                   ),
                 ),
-                const SizedBox(width: 16),
-                TextButton(
-                  onPressed: () {
-                    showShareDialog(context); 
-                  },
-                  child: const Text(
-                    'Share',
-                    style: TextStyle(color: Colors.black),
-                  ),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        // Compile and Run action
+                      },
+                      child: const Text(
+                        'Compile and Run',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    TextButton(
+                      onPressed: () {
+                        showShareDialog(context); 
+                      },
+                      child: const Text(
+                        'Share',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    TextButton(
+                      onPressed: saveTextInput,
+                      child: const Text(
+                        'Save Text',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                TextButton(
-                  onPressed: saveTextInput,
-                  child: const Text(
-                    'Save Text',
-                    style: TextStyle(color: Colors.black),
-                  ),
-                ),
-                const SizedBox(width: 16),
               ],
             ),
           ),
@@ -177,13 +301,7 @@ class _ProjectPageState extends State<ProjectPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 16.0),
-                      _buildProjectTile(context, 'program.c'),
-                      const SizedBox(height: 8),
-                      _buildProjectTile(context, 'game.c'),
-                      const SizedBox(height: 8),
-                      _buildProjectTile(context, 'maze.c'),
-                      const SizedBox(height: 8),
-                      _buildProjectTile(context, 'karel.c'),
+                      ...projectFiles.map((file) => _buildProjectTile(context, file)).toList(),
                     ],
                   ),
                 ),
@@ -234,17 +352,19 @@ class _ProjectPageState extends State<ProjectPage> {
     );
   }
 
-  Widget _buildProjectTile(BuildContext context, String projectName) {
+  Widget _buildProjectTile(BuildContext context, Map<String, dynamic> file) {
     return Card(
       color: const Color.fromARGB(255, 214, 243, 243),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
       child: ListTile(
         leading: const Icon(Icons.description, color: Colors.black),
         title: Text(
-          projectName,
+          file['file_name'],
           style: const TextStyle(fontSize: 18, color: Colors.black),
         ),
-        onTap: () {},
+        onTap: () {
+          _fetchFileContent(file['id'], file['file_name']);
+        },
       ),
     );
   }
