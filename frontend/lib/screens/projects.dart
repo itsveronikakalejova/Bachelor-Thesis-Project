@@ -1,266 +1,103 @@
 import 'package:flutter/material.dart';
 import 'package:sesh/widgets/colors.dart';
 import 'package:sesh/widgets/sideBar.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:sesh/screens/project.dart';
 
 class ProjectsPage extends StatefulWidget {
-  const ProjectsPage({super.key});
+  final String token;
+  final int userId;
+  final String username;
+
+  const ProjectsPage({super.key, required this.token, required this.userId, required this.username});
 
   @override
   _ProjectsPageState createState() => _ProjectsPageState();
 }
 
 class _ProjectsPageState extends State<ProjectsPage> {
-  final List<String> projects = [
-    'IPC Project',
-    'Copymaster',
-    'Cuberoll',
-    'Pipes',
-    'Programovanie',
-    'Šachy',
-  ];
+  List<Project> projects = [];
+  bool isLoading = true;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: myWhite,
-      drawer: SideBar(
-        onProjectsTap: () {
-          Navigator.pop(context);
-          Navigator.pushNamed(context, '/projects');
-        },
-        onChatsTap: () {
-          Navigator.pop(context);
-          Navigator.pushNamed(context, '/chats');
-        },
-        onTasksTap: () {
-          Navigator.pop(context);
-          Navigator.pushNamed(context, '/tasks');
-        },
-      ),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text(
-          'Projects',
-          style: TextStyle(
-            color: Colors.black,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16.0),
-                  Expanded(
-                    child: ListView(
-                      children: projects.map((projectName) {
-                        return _buildProjectTile(projectName);
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                ElevatedButton(
-                  onPressed: _showAddProjectDialog,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0, vertical: 12.0),
-                    elevation: 2.0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                  ),
-                  child: const Text(
-                    'Add New Project',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            color: const Color.fromARGB(255, 34, 34, 34),
-            alignment: Alignment.center,
-            child: const Text(
-              '© Veronika Kalejová 2024',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
+  void initState() {
+    super.initState();
+    fetchProjects();
   }
-Widget _buildProjectTile(String projectName) {
-  return Card(
-    color: const Color.fromARGB(255, 214, 243, 243),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-    child: ListTile(
-      leading: const Icon(Icons.description, color: Colors.black),
-      title: Text(
-        projectName,
-        style: const TextStyle(fontSize: 18, color: Colors.black),
-      ),
-      trailing: PopupMenuButton<String>(
-        icon: const Icon(Icons.more_vert, color: Colors.black),
-        onSelected: (String value) {
-          if (value == 'delete') {
-            deleteProject(projectName);
-          } else if (value == 'share') {
-            _showShareDialog(context, projectName);
-          }
-        },
-        itemBuilder: (BuildContext context) => [
-          const PopupMenuItem<String>(
-            value: 'delete',
-            child: Text('Delete Project'),
-          ),
-          const PopupMenuItem<String>(
-            value: 'share',
-            child: Text('Share Project'),
-          ),
-        ],
-      ),
-      onTap: () {
-        if (projectName == 'IPC Project') {
-          Navigator.pushNamed(context, '/project');
-        }
-      },
-    ),
-  );
-}
 
-  void _showAddProjectDialog() {
-    TextEditingController projectNameController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Project'),
-          content: TextField(
-            controller: projectNameController,
-            decoration: const InputDecoration(
-              labelText: 'Project Name',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  projects.add(projectNameController.text);
-                });
-                Navigator.of(context).pop();
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
+  Future<void> fetchProjects() async {
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/projects?username=${widget.username}'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
       },
     );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        projects = (json.decode(response.body) as List)
+            .map((data) => Project.fromJson(data))
+            .toList();
+        isLoading = false;
+      });
+    } else {
+      // Handle error
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
-  
-   void _showShareDialog(BuildContext context, String projectName) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('$projectName shared'),
-    ));
 
-   showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        String selectedPrivilege = 'Can View';
-        String selectedPerson = 'Majo';
-
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setDialogState) {
-            return AlertDialog(
-              title: const Text('Share Project'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Add People:'),
-                  DropdownButton<String>(
-                    value: selectedPerson,
-                    onChanged: (String? newValue) {
-                      setDialogState(() {
-                        selectedPerson = newValue!;
-                      });
-                    },
-                    items: <String>['Majo', 'Peto', 'Jano']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Select Privileges:'),
-                  DropdownButton<String>(
-                    value: selectedPrivilege,
-                    onChanged: (String? newValue) {
-                      setDialogState(() {
-                        selectedPrivilege = newValue!;
-                      });
-                    },
-                    items: <String>['Can Edit', 'Can View']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(
-                                    'Project shared with $selectedPerson as $selectedPrivilege')),
-                          );
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('Share'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text('Cancel'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
-        );
+  Future<void> addProject(String name) async {
+    final response = await http.post(
+      Uri.parse('http://localhost:3000/projects'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${widget.token}',
       },
+      body: json.encode({
+        'name': name,
+        'username': widget.username,
+      }),
     );
+
+    if (response.statusCode == 201) {
+      final newProject = Project.fromJson(json.decode(response.body));
+      setState(() {
+        projects.add(newProject);
+      });
+    } else {
+      // Handle error
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to add project')),
+      );
+    }
+  }
+
+  Future<void> deleteProject(Project project) async {
+    final shouldDelete = await _showDeleteProjectDialog(project.name);
+    if (shouldDelete) {
+      final response = await http.delete(
+        Uri.parse('http://localhost:3000/projects/${project.id}'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          projects.remove(project);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Project deleted successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete project')),
+        );
+      }
+    }
   }
 
   Future<bool> _showDeleteProjectDialog(String projectName) async {
@@ -291,16 +128,190 @@ Widget _buildProjectTile(String projectName) {
     return shouldDelete ?? false;
   }
 
-  Future<void> deleteProject(String projectName) async {
-    bool delete = await _showDeleteProjectDialog(projectName);
-    
-    if (delete == true) {
-      setState(() {
-        projects.remove(projectName);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('$projectName deleted'),
-    ));
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: myWhite,
+      drawer: SideBar(
+        onProjectsTap: () {
+          Navigator.pushNamed(context, '/projects');
+        },
+        onChatsTap: () {
+          Navigator.pushNamed(context, '/chats');
+        },
+        onTasksTap: () {
+          Navigator.pushNamed(context, '/tasks');
+        },
+      ),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Projects',
+          style: TextStyle(
+            color: Colors.black,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 16.0),
+                        Expanded(
+                          child: ListView(
+                            children: projects.map((project) {
+                              return _buildProjectTile(context, project);
+                            }).toList(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton(
+                        onPressed: _showAddProjectDialog,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0, vertical: 12.0),
+                          elevation: 2.0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        child: const Text(
+                          'Add New Project',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  color: const Color.fromARGB(255, 34, 34, 34),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    '© Veronika Kalejová 2024',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildProjectTile(BuildContext context, Project project) {
+    return Card(
+      color: const Color.fromARGB(255, 214, 243, 243),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+      child: ListTile(
+        leading: const Icon(Icons.description, color: Colors.black),
+        title: Text(
+          project.name,
+          style: const TextStyle(fontSize: 18, color: Colors.black),
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.black),
+          onSelected: (String value) {
+            if (value == 'delete') {
+              deleteProject(project);
+            } else if (value == 'share') {
+              // _showShareDialog(context, project);
+            }
+          },
+          itemBuilder: (BuildContext context) => [
+            const PopupMenuItem<String>(
+              value: 'delete',
+              child: Text('Delete Project'),
+            ),
+            const PopupMenuItem<String>(
+              value: 'share',
+              child: Text('Share Project'),
+            ),
+          ],
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProjectPage(
+                token: widget.token,
+                userId: widget.userId,
+                username: widget.username,
+                projectId: project.id,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAddProjectDialog() {
+    TextEditingController projectNameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add New Project'),
+          content: TextField(
+            controller: projectNameController,
+            decoration: const InputDecoration(
+              labelText: 'Project Name',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final projectName = projectNameController.text;
+                if (projectName.isNotEmpty) {
+                  addProject(projectName);
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a project name')),
+                  );
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class Project {
+  final int id;
+  final String name;
+
+  Project({required this.id, required this.name});
+
+  factory Project.fromJson(Map<String, dynamic> json) {
+    return Project(
+      id: json['id'],
+      name: json['name'],
+    );
   }
 }

@@ -5,6 +5,7 @@ const routes = require("./controllers/routes");
 const { initializeSocket } = require("./controllers/socket"); 
 const bodyParser = require('body-parser');
 const authRoutes = require('./database/authRoutes');
+const projectsRoutes = require('./database/projectsRoutes');
 const userRoutes = require('./database/userRoutes'); 
 
 const app = express();
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use(routes); 
 app.use(bodyParser.json());
 app.use('/auth', authRoutes);
+app.use('/', projectsRoutes);
 app.use('/api', userRoutes); 
 
 initializeSocket(server); 

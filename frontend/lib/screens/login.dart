@@ -27,8 +27,10 @@ class LoginPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(16.0),
             boxShadow: const [
               BoxShadow(
-                color: Colors.grey
-              )
+                color: Colors.grey,
+                blurRadius: 10.0,
+                spreadRadius: 5.0,
+              ),
             ],
           ),
           child: SizedBox(
@@ -80,15 +82,20 @@ class LoginPage extends StatelessWidget {
                       final password = passwordController.text;
 
                       if (username.isNotEmpty && password.isNotEmpty) {
-                        final token = await authService.login(username, password);
-                        if (token != null) {
+                        final response = await authService.login(username, password);
+                        if (response != null && response.containsKey('token') && response.containsKey('userId')) {
+                          final token = response['token'];
+                          final userId = response['userId'];
+                          final username = response['username'];
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Logged in as $username')),
                           );
 
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const ProjectsPage()),
+                            MaterialPageRoute(
+                              builder: (context) => ProjectsPage(token: token, userId: userId, username: username),
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(

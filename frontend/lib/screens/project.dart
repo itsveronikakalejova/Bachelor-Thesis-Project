@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:sesh/widgets/sideBar.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:sesh/widgets/shareDialog.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:sesh/widgets/shareDialog.dart';
+import 'dart:io';
 
 class ProjectPage extends StatefulWidget {
-  const ProjectPage({super.key});
+  final String token;
+  final int userId;
+  final String username;
+  final int projectId;
+
+  const ProjectPage({super.key, required this.token, required this.userId, required this.username, required this.projectId});
 
   @override
   _ProjectPageState createState() => _ProjectPageState();
@@ -15,8 +21,7 @@ class ProjectPage extends StatefulWidget {
 class _ProjectPageState extends State<ProjectPage> {
   late IO.Socket socket;
   final TextEditingController _contentController = TextEditingController();
-  final TextEditingController _inputController = TextEditingController();
-  final String documentId = "project123"; 
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -33,7 +38,7 @@ class _ProjectPageState extends State<ProjectPage> {
     socket.connect();
 
     socket.onConnect((_) {
-      socket.emit("join-document", documentId);
+      socket.emit("join-document", widget.projectId);
     });
 
     socket.on("load-document", (data) {
@@ -50,13 +55,38 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 
   void _sendTextUpdate(String text) {
-    socket.emit("update-document", {"docId": documentId, "content": text});
+    socket.emit("update-document", {"docId": widget.projectId, "content": text});
+  }
+
+  Future<void> saveTextInput() async {
+    final text = _contentController.text;
+
+    final response = await http.post(
+      Uri.parse('http://localhost:3000/projects/${widget.projectId}/saveText'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${widget.token}',
+      },
+      body: jsonEncode({
+        'text': text,
+        'uploadedBy': widget.userId.toString(), // Use userId instead of username
+      }),
+    );
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Text input saved successfully')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to save text input')),
+      );
+    }
   }
 
   @override
   void dispose() {
     _contentController.dispose();
-    _inputController.dispose();
     socket.disconnect();
     super.dispose();
   }
@@ -107,7 +137,7 @@ class _ProjectPageState extends State<ProjectPage> {
               children: [
                 TextButton(
                   onPressed: () {
-                    
+                    // Compile and Run action
                   },
                   child: const Text(
                     'Compile and Run',
@@ -124,6 +154,15 @@ class _ProjectPageState extends State<ProjectPage> {
                     style: TextStyle(color: Colors.black),
                   ),
                 ),
+                const SizedBox(width: 16),
+                TextButton(
+                  onPressed: saveTextInput,
+                  child: const Text(
+                    'Save Text',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+                const SizedBox(width: 16),
               ],
             ),
           ),

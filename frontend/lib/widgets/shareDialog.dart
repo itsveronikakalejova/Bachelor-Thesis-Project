@@ -15,7 +15,7 @@ void showShareDialog(BuildContext context) {
         List<dynamic> data = jsonDecode(response.body);
         users = List<String>.from(data);
         if (users.isNotEmpty) {
-          selectedPerson = users.first; 
+          selectedPerson = users.first;
         }
       } else {
         print("Error while fetching users: ${response.statusCode}");
@@ -25,90 +25,83 @@ void showShareDialog(BuildContext context) {
     }
   }
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return StatefulBuilder(
-        builder: (BuildContext context, StateSetter setDialogState) {
-          return AlertDialog(
-            title: const Text("Share Project"),
-            content: FutureBuilder(
-              future: fetchUsers(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (users.isEmpty) {
-                  return const Text("No users found");
-                }
-
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Add People:"),
-                    DropdownButton<String>(
-                      value: selectedPerson,
-                      onChanged: (String? newValue) {
-                        setDialogState(() {
-                          selectedPerson = newValue!;
-                        });
-                      },
-                      items: users.map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text("Select Privileges:"),
-                    DropdownButton<String>(
-                      value: selectedPrivilege,
-                      onChanged: (String? newValue) {
-                        setDialogState(() {
-                          selectedPrivilege = newValue!;
-                        });
-                      },
-                      items: <String>["Can Edit", "Can View"]
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  fetchUsers().then((_) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              title: const Text("Share Project"),
+              content: users.isEmpty
+                  ? const Text("No users found")
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ElevatedButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      "Project shared with $selectedPerson as $selectedPrivilege")),
+                        const Text("Add People:"),
+                        DropdownButton<String>(
+                          value: selectedPerson,
+                          onChanged: (String? newValue) {
+                            setDialogState(() {
+                              selectedPerson = newValue!;
+                            });
+                          },
+                          items: users.map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
                             );
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text("Share"),
+                          }).toList(),
                         ),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
+                        const SizedBox(height: 16),
+                        const Text("Select Privileges:"),
+                        DropdownButton<String>(
+                          value: selectedPrivilege,
+                          onChanged: (String? newValue) {
+                            setDialogState(() {
+                              selectedPrivilege = newValue!;
+                            });
                           },
-                          child: const Text("Cancel"),
+                          items: <String>["Can Edit", "Can View"]
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      "Project shared with $selectedPerson as $selectedPrivilege",
+                                    ),
+                                  ),
+                                );
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text("Share"),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text("Cancel"),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                );
-              },
-            ),
-          );
-        },
-      );
-    },
-  );
+            );
+          },
+        );
+      },
+    );
+  });
 }

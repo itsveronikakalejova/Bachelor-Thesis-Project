@@ -14,7 +14,7 @@ class AuthService {
     return response.statusCode == 201;
   }
 
-  Future<String?> login(String username, String password) async {
+  Future<Map<String, dynamic>?> login(String username, String password) async {
     final response = await http.post(
       Uri.parse('$apiUrl/login'),
       headers: {'Content-Type': 'application/json'},
@@ -23,7 +23,11 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['token'];
+      return {
+        'token': data['token'],
+        'userId': data['userId'],
+        'username': data['username'],
+      };
     }
     return null;
   }
