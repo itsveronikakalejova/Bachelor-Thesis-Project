@@ -3,6 +3,8 @@ import 'package:sesh/screens/register.dart';
 import 'package:sesh/screens/projects.dart';
 import 'package:sesh/widgets/colors.dart';
 import 'package:sesh/screens/authService.dart';
+import 'package:sesh/widgets/globals.dart' as globals;
+
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -84,17 +86,18 @@ class LoginPage extends StatelessWidget {
                       if (username.isNotEmpty && password.isNotEmpty) {
                         final response = await authService.login(username, password);
                         if (response != null && response.containsKey('token') && response.containsKey('userId')) {
-                          final token = response['token'];
-                          final userId = response['userId'];
-                          final username = response['username'];
+                          globals.token = response['token'];  // Uloženie tokenu
+                          globals.userId = response['userId'];  // Uloženie userId
+                          globals.username = response['username'];  // Uloženie mena
+
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Logged in as $username')),
+                            SnackBar(content: Text('Logged in as ${globals.username}')),
                           );
 
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ProjectsPage(token: token, userId: userId, username: username),
+                              builder: (context) => ProjectsPage(),
                             ),
                           );
                         } else {
@@ -108,6 +111,7 @@ class LoginPage extends StatelessWidget {
                         );
                       }
                     },
+
                     child: const Text('Login'),
                   ),
                   const SizedBox(height: 16.0),

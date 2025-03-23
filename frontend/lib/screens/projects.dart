@@ -4,13 +4,12 @@ import 'package:sesh/widgets/sideBar.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:sesh/screens/project.dart';
+import 'package:sesh/widgets/globals.dart' as globals;
+import 'package:sesh/widgets/project_model.dart';
+
 
 class ProjectsPage extends StatefulWidget {
-  final String token;
-  final int userId;
-  final String username;
-
-  const ProjectsPage({super.key, required this.token, required this.userId, required this.username});
+  const ProjectsPage({super.key});
 
   @override
   _ProjectsPageState createState() => _ProjectsPageState();
@@ -28,9 +27,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
   Future<void> fetchProjects() async {
     final response = await http.get(
-      Uri.parse('http://localhost:3000/projects?username=${widget.username}'),
+      Uri.parse('http://localhost:3000/projects?username=${globals.username}'),
       headers: {
-        'Authorization': 'Bearer ${widget.token}',
+        'Authorization': 'Bearer ${globals.token}',
       },
     );
 
@@ -42,7 +41,6 @@ class _ProjectsPageState extends State<ProjectsPage> {
         isLoading = false;
       });
     } else {
-      // Handle error
       setState(() {
         isLoading = false;
       });
@@ -54,11 +52,11 @@ class _ProjectsPageState extends State<ProjectsPage> {
       Uri.parse('http://localhost:3000/projects'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.token}',
+        'Authorization': 'Bearer ${globals.token}',
       },
       body: json.encode({
         'name': name,
-        'username': widget.username,
+        'username': globals.username,
       }),
     );
 
@@ -68,7 +66,6 @@ class _ProjectsPageState extends State<ProjectsPage> {
         projects.add(newProject);
       });
     } else {
-      // Handle error
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to add project')),
       );
@@ -81,7 +78,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       final response = await http.delete(
         Uri.parse('http://localhost:3000/projects/${project.id}'),
         headers: {
-          'Authorization': 'Bearer ${widget.token}',
+          'Authorization': 'Bearer ${globals.token}',
         },
       );
 
@@ -228,18 +225,12 @@ class _ProjectsPageState extends State<ProjectsPage> {
           onSelected: (String value) {
             if (value == 'delete') {
               deleteProject(project);
-            } else if (value == 'share') {
-              // _showShareDialog(context, project);
             }
           },
           itemBuilder: (BuildContext context) => [
             const PopupMenuItem<String>(
               value: 'delete',
               child: Text('Delete Project'),
-            ),
-            const PopupMenuItem<String>(
-              value: 'share',
-              child: Text('Share Project'),
             ),
           ],
         ),
@@ -248,9 +239,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
             context,
             MaterialPageRoute(
               builder: (context) => ProjectPage(
-                token: widget.token,
-                userId: widget.userId,
-                username: widget.username,
+                token: globals.token,
+                userId: globals.userId,
+                username: globals.username,
                 projectId: project.id,
               ),
             ),
@@ -298,20 +289,6 @@ class _ProjectsPageState extends State<ProjectsPage> {
           ],
         );
       },
-    );
-  }
-}
-
-class Project {
-  final int id;
-  final String name;
-
-  Project({required this.id, required this.name});
-
-  factory Project.fromJson(Map<String, dynamic> json) {
-    return Project(
-      id: json['id'],
-      name: json['name'],
     );
   }
 }

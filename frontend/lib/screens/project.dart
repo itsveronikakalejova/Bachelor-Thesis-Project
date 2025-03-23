@@ -37,25 +37,45 @@ class _ProjectPageState extends State<ProjectPage> {
       "transports": ["websocket"],
       "autoConnect": false,
     });
+    if (socket.connected) return; // Zabráni duplicite spojení
+
+    socket = IO.io("http://localhost:3000", <String, dynamic>{
+      "transports": ["websocket"],
+      "autoConnect": false,
+    });
 
     socket.connect();
 
     socket.onConnect((_) {
+      print("Connected to socket");
       socket.emit("join-document", widget.projectId);
     });
 
     socket.on("load-document", (data) {
-      setState(() {
-        _contentController.text = data;
-      });
+      if (mounted) {
+        setState(() {
+          _contentController.text = data;
+        });
+      }
     });
 
     socket.on("update-document", (content) {
-      setState(() {
-        _contentController.text = content;
-      });
+      if (mounted) {
+        setState(() {
+          _contentController.text = content;
+        });
+      }
+    });
+
+    socket.onDisconnect((_) {
+      print("Socket disconnected");
+    });
+
+    socket.onError((error) {
+      print("Socket error: $error");
     });
   }
+
 
   void _sendTextUpdate(String text) {
     socket.emit("update-document", {"docId": widget.projectId, "content": text});
@@ -202,9 +222,13 @@ class _ProjectPageState extends State<ProjectPage> {
   @override
   void dispose() {
     _contentController.dispose();
-    socket.disconnect();
+    if (socket.connected) {
+      socket.disconnect();
+      socket.dispose();
+    }
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
