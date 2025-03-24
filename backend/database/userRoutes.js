@@ -1,16 +1,15 @@
-// userRoutes.js
 const express = require('express');
-const { getUsers } = require('./userService');  // Destructure to get the getUsers function
+const { db, getUsers } = require('./db');
 
 const router = express.Router();
 
-router.get("/users", async (req, res) => {
-  try {
-    const users = await getUsers();  // Calling the async function
-    res.json(users);  // Respond with the list of users
-  } catch (err) {
-    res.status(500).json({ error: "Chyba pri ziskavani pouzivatelov." });
-  }
+router.get("/users", (req, res) => {
+    getUsers((err, users) => {
+        if (err) {
+            return res.status(500).json({ error: "Chyba pri ziskavani pouzivatelov." });
+        }
+        res.json(users);
+    });
 });
 
 module.exports = router;

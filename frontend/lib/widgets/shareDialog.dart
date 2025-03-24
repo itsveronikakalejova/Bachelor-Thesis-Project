@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-void showShareDialog(BuildContext context, String projectName, String privilege) {
+void showShareDialog(BuildContext context) {
   List<String> users = [];
   String selectedPerson = "";
+  String selectedPrivilege = "Can View";
 
   Future<void> fetchUsers() async {
     try {
@@ -18,29 +19,6 @@ void showShareDialog(BuildContext context, String projectName, String privilege)
         }
       } else {
         print("Error while fetching users: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error connecting to the server: $e");
-    }
-  }
-  Future<void> shareProject(String projectName, String userName, String privilege) async {
-    try {
-      final response = await http.post(
-        Uri.parse("http://localhost:3000/share"),  // API endpoint
-        headers: {
-          "Content-Type": "application/json",  // Ensure the server knows it's JSON
-        },
-        body: jsonEncode({
-          'projectName': projectName,  // Send projectName instead of owner
-          'userName': userName,        // Send userName instead of user
-          'privilege': privilege,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        print("Project shared successfully");
-      } else {
-        print("Failed to share project: ${response.statusCode}");
       }
     } catch (e) {
       print("Error connecting to the server: $e");
@@ -77,18 +55,32 @@ void showShareDialog(BuildContext context, String projectName, String privilege)
                           }).toList(),
                         ),
                         const SizedBox(height: 16),
+                        const Text("Select Privileges:"),
+                        DropdownButton<String>(
+                          value: selectedPrivilege,
+                          onChanged: (String? newValue) {
+                            setDialogState(() {
+                              selectedPrivilege = newValue!;
+                            });
+                          },
+                          items: <String>["Can Edit", "Can View"]
+                              .map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             ElevatedButton(
                               onPressed: () {
-                                // Call shareProject here
-                                shareProject(projectName, selectedPerson, privilege);
-
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      "Project shared with $selectedPerson.",
+                                      "Project shared with $selectedPerson as $selectedPrivilege",
                                     ),
                                   ),
                                 );

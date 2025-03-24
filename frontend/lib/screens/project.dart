@@ -294,7 +294,7 @@ class _ProjectPageState extends State<ProjectPage> {
                     const SizedBox(width: 16),
                     TextButton(
                       onPressed: () {
-                        showShareDialog(context, "IPC project", "editor"); // ----------------------------------------------------------------------------------------------
+                        showShareDialog(context); 
                       },
                       child: const Text(
                         'Share',
