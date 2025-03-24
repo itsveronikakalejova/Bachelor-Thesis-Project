@@ -10,4 +10,6 @@ class Project {
       name: json['name'],
     );
   }
+
+  get role => null;
 }

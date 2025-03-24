@@ -121,6 +121,29 @@ class _ProjectPageState extends State<ProjectPage> {
     }
   }
 
+  Future<String> _fetchProjectName() async {
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/projects/${widget.projectId}/details'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print("Project Data: $data");  // Debugging line
+      return data['name']; // Return project name
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to fetch project name')),
+      );
+      return ''; // Return empty string if fetch fails
+    }
+  }
+
+
+
+
   Future<void> saveTextInput() async {
     final text = _contentController.text;
 
@@ -293,8 +316,9 @@ class _ProjectPageState extends State<ProjectPage> {
                     ),
                     const SizedBox(width: 16),
                     TextButton(
-                      onPressed: () {
-                        showShareDialog(context, "IPC project", "editor"); // ----------------------------------------------------------------------------------------------
+                      onPressed: () async {
+                        String projectName = await _fetchProjectName();
+                        showShareDialog(context, projectName, "editor");
                       },
                       child: const Text(
                         'Share',

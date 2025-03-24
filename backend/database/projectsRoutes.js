@@ -2,26 +2,48 @@ const express = require('express');
 const db= require('./db');
 const router = express.Router();
 
-// Fetch projects for a specific user
 router.get('/projects', (req, res) => {
     const { username } = req.query;
+
+    // Find the user ID based on the username
     const findUserSql = "SELECT id FROM users WHERE username = ?";
     db.query(findUserSql, [username], (err, userResults) => {
         if (err || userResults.length === 0) {
             console.error("Error finding user:", err);
             return res.status(500).json({ error: 'Failed to find user' });
         }
-        const ownerId = userResults[0].id;
-        const sql = "SELECT * FROM projects WHERE owner_id = ?";
-        db.query(sql, [ownerId], (err, results) => {
+        const userId = userResults[0].id;
+
+        // Query to get projects where user is either the owner or has editor rights
+        const sql = `
+            SELECT p.id, p.name, 
+                CASE 
+                    WHEN pa.role = 'owner' THEN 'owner'
+                    ELSE 'editor'
+                END AS role
+            FROM projects p
+            LEFT JOIN project_users pa ON p.id = pa.project_id
+            WHERE pa.user_id = ? OR p.owner_id = ?;
+        `;
+        
+        db.query(sql, [userId, userId], (err, results) => {
             if (err) {
                 console.error("Error fetching projects:", err);
                 return res.status(500).json({ error: 'Failed to fetch projects' });
             }
-            res.json(results);
+
+            // Format the response to include user role for each project
+            const projectsWithRoles = results.map(project => ({
+                id: project.id,
+                name: project.name,
+                role: project.role
+            }));
+
+            res.json(projectsWithRoles);
         });
     });
 });
+
 
 // Add a new project
 router.post('/projects', (req, res) => {
@@ -138,5 +160,23 @@ router.get('/projects/:projectId/files/:fileId', (req, res) => {
         }
     });
 });
+
+// Fetch project details (including project name)
+router.get('/projects/:projectId/details', (req, res) => {
+    const { projectId } = req.params;
+    const sql = "SELECT name FROM projects WHERE id = ?";
+    db.query(sql, [projectId], (err, results) => {
+        if (err) {
+            console.error("Error fetching project details:", err);
+            return res.status(500).json({ error: 'Failed to fetch project details' });
+        }
+        if (results.length > 0) {
+            res.json({ name: results[0].name });
+        } else {
+            res.status(404).json({ error: 'Project not found' });
+        }
+    });
+});
+
 
 module.exports = router;

@@ -6,6 +6,7 @@ void showShareDialog(BuildContext context, String projectName, String privilege)
   List<String> users = [];
   String selectedPerson = "";
 
+  // Fetch users function
   Future<void> fetchUsers() async {
     try {
       final response = await http.get(Uri.parse("http://localhost:3000/api/users"));
@@ -14,7 +15,7 @@ void showShareDialog(BuildContext context, String projectName, String privilege)
         List<dynamic> data = jsonDecode(response.body);
         users = List<String>.from(data);
         if (users.isNotEmpty) {
-          selectedPerson = users.first;
+          selectedPerson = users.first;  // Default to the first user if available
         }
       } else {
         print("Error while fetching users: ${response.statusCode}");
@@ -23,16 +24,18 @@ void showShareDialog(BuildContext context, String projectName, String privilege)
       print("Error connecting to the server: $e");
     }
   }
+
+  // Share project function
   Future<void> shareProject(String projectName, String userName, String privilege) async {
     try {
       final response = await http.post(
-        Uri.parse("http://localhost:3000/share"),  // API endpoint
+        Uri.parse("http://localhost:3000/share"),
         headers: {
           "Content-Type": "application/json",  // Ensure the server knows it's JSON
         },
         body: jsonEncode({
-          'projectName': projectName,  // Send projectName instead of owner
-          'userName': userName,        // Send userName instead of user
+          'projectName': projectName,
+          'userName': userName,
           'privilege': privilege,
         }),
       );
@@ -47,6 +50,7 @@ void showShareDialog(BuildContext context, String projectName, String privilege)
     }
   }
 
+  // Fetch users and then show the dialog
   fetchUsers().then((_) {
     showDialog(
       context: context,

@@ -34,10 +34,22 @@ class _ProjectsPageState extends State<ProjectsPage> {
     );
 
     if (response.statusCode == 200) {
+      List<Project> fetchedProjects = (json.decode(response.body) as List)
+          .map((data) => Project.fromJson(data))
+          .toList();
+
+      // Remove duplicates by checking if the project already exists based on ID or name
       setState(() {
-        projects = (json.decode(response.body) as List)
-            .map((data) => Project.fromJson(data))
-            .toList();
+        projects = [];
+        for (var project in fetchedProjects) {
+          // Check if project already exists in the list by comparing IDs or names
+          bool exists = projects.any((existingProject) =>
+              existingProject.id == project.id || existingProject.name == project.name);
+
+          if (!exists) {
+            projects.add(project);
+          }
+        }
         isLoading = false;
       });
     } else {
@@ -46,6 +58,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       });
     }
   }
+
 
   Future<void> addProject(String name) async {
     final response = await http.post(
@@ -211,8 +224,10 @@ class _ProjectsPageState extends State<ProjectsPage> {
   }
 
   Widget _buildProjectTile(BuildContext context, Project project) {
+    // Determine if the current user is the owner or an editor
+    Color projectColor = myGreen;
     return Card(
-      color: const Color.fromARGB(255, 214, 243, 243),
+      color: projectColor,  // Apply color for owner or editor
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
       child: ListTile(
         leading: const Icon(Icons.description, color: Colors.black),
