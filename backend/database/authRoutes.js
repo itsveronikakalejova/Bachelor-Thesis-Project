@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { db, getUsers } = require('./db');
+const db = require('./db');
 const router = express.Router();
 
 // registracia pouzivatela
