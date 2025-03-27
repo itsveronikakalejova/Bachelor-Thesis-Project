@@ -90,4 +90,48 @@ router.delete('/delete-task/:taskId', (req, res) => {
   });
 });
 
+router.put('/update-status', (req, res) => {
+    const { taskName, newStatus } = req.body;
+
+    if (!taskName || !newStatus) {
+        return res.status(400).json({ error: 'Task name and new status are required' });
+    }
+
+    // First, find the task by taskName
+    db.query(
+        'SELECT id FROM tasks WHERE task_name = ?',
+        [taskName],
+        (err, results) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: 'Failed to find task' });
+            }
+
+            if (results.length === 0) {
+                return res.status(404).json({ error: 'Task not found' });
+            }
+
+            const taskId = results[0].id;
+
+            // Now that we have the task ID, update the task status
+            db.query(
+                'UPDATE tasks SET status = ? WHERE id = ?',
+                [newStatus, taskId],
+                (err, result) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({ error: 'Failed to update task status' });
+                    }
+
+                    if (result.affectedRows > 0) {
+                        res.status(200).json({ message: 'Task status updated successfully' });
+                    } else {
+                        res.status(404).json({ error: 'Failed to update task status' });
+                    }
+                }
+            );
+        }
+    );
+});
+  
 module.exports = router;

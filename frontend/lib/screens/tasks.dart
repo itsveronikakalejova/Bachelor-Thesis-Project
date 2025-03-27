@@ -92,8 +92,9 @@ class _TasksPageState extends State<TasksPage> {
     }
   }
 
-  void moveTask(Task task, String fromColumn, String toColumn) {
+  Future<void> moveTask(Task task, String fromColumn, String toColumn) async {
     setState(() {
+      // Remove the task from the current column
       if (fromColumn == 'To Do') {
         toDoTasks.remove(task);
       } else if (fromColumn == 'Doing') {
@@ -102,6 +103,7 @@ class _TasksPageState extends State<TasksPage> {
         doneTasks.remove(task);
       }
 
+      // Add the task to the new column
       if (toColumn == 'To Do') {
         toDoTasks.add(task);
       } else if (toColumn == 'Doing') {
@@ -110,7 +112,41 @@ class _TasksPageState extends State<TasksPage> {
         doneTasks.add(task);
       }
     });
+
+    String dbStatus = '';
+    if (toColumn == 'To Do') {
+      dbStatus = 'todo';
+    } else if (toColumn == 'Doing') {
+      dbStatus = 'doing';
+    } else if (toColumn == 'Done') {
+      dbStatus = 'done';
+    }
+
+    // Send a PUT request to update the task status in the database
+    try {
+      final response = await http.put(
+        Uri.parse('http://localhost:3000/tasks/update-status'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'taskName': task.name,  // Send the task name
+          'newStatus': dbStatus,  // Send the new status (toColumn)
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // Success
+        print('Task status updated successfully');
+      } else {
+        // Handle error
+        print('Failed to update task status: ${json.decode(response.body)['error']}');
+      }
+    } catch (error) {
+      print('Error updating task status: $error');
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
