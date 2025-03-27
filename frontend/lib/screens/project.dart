@@ -4,7 +4,6 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:sesh/widgets/shareDialog.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:io';
 
 class ProjectPage extends StatefulWidget {
   final String token;
@@ -140,9 +139,6 @@ class _ProjectPageState extends State<ProjectPage> {
       return ''; // Return empty string if fetch fails
     }
   }
-
-
-
 
   Future<void> saveTextInput() async {
     final text = _contentController.text;
@@ -329,7 +325,7 @@ class _ProjectPageState extends State<ProjectPage> {
                     TextButton(
                       onPressed: saveTextInput,
                       child: const Text(
-                        'Save Text',
+                        'Save File',
                         style: TextStyle(color: Colors.black),
                       ),
                     ),

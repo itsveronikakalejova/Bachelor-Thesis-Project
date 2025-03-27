@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sesh/widgets/colors.dart';
 import 'login.dart';
 import 'package:sesh/screens/authService.dart';
-import 'projects.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});

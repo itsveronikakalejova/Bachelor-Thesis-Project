@@ -178,5 +178,22 @@ router.get('/projects/:projectId/details', (req, res) => {
     });
 });
 
-
+router.get('/projects/:projectId', async (req, res) => {
+    const projectId = req.params.projectId;
+  
+    try {
+      // Query the database for the project using the project ID
+      const result = await db.query('SELECT * FROM projects WHERE id = ?', [projectId]);
+  
+      if (result.length > 0) {
+        // Send back the project data
+        res.json({ name: result[0].name });  // Assuming `name` is the column for the project name
+      } else {
+        res.status(404).json({ error: 'Project not found' });
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to fetch project' });
+    }
+});
 module.exports = router;

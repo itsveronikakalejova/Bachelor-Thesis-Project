@@ -8,6 +8,7 @@ const authRoutes = require('./database/authRoutes');
 const projectsRoutes = require('./database/projectsRoutes');
 const userRoutes = require('./database/userRoutes'); 
 const shareProjectRoutes = require('./controllers/shareProject'); 
+const tasksRoutes = require('./database/tasks');
 
 const app = express();
 const server = http.createServer(app);
@@ -22,6 +23,7 @@ app.use('/auth', authRoutes);
 app.use('/', projectsRoutes);
 app.use('/api', userRoutes); 
 app.use(shareProjectRoutes); 
+app.use('/tasks', tasksRoutes);
 
 initializeSocket(server); 
 
