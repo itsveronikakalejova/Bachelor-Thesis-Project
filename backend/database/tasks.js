@@ -133,5 +133,25 @@ router.put('/update-status', (req, res) => {
         }
     );
 });
+
+router.delete('/delete-task', async (req, res) => {
+    try {
+        const { taskName } = req.body;
+        if (!taskName) {
+            return res.status(400).json({ error: "Task name is required" });
+        }
+
+        const deleteQuery = 'DELETE FROM tasks WHERE task_name = ?';
+        db.query(deleteQuery, [taskName], (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: "Database error" });
+            }
+            res.status(200).json({ message: "Task deleted successfully" });
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Server error" });
+    }
+});
   
 module.exports = router;

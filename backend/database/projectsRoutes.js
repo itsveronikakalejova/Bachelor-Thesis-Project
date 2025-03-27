@@ -178,22 +178,30 @@ router.get('/projects/:projectId/details', (req, res) => {
     });
 });
 
-router.get('/projects/:projectId', async (req, res) => {
-    const projectId = req.params.projectId;
-  
+router.get('/project/:id', async (req, res) => {
+    const projectId = req.params.id;  // Get project ID from URL parameter
+
+    if (!projectId) {
+        return res.status(400).json({ error: 'Project ID is required' });
+    }
+
     try {
-      // Query the database for the project using the project ID
-      const result = await db.query('SELECT * FROM projects WHERE id = ?', [projectId]);
-  
-      if (result.length > 0) {
-        // Send back the project data
-        res.json({ name: result[0].name });  // Assuming `name` is the column for the project name
-      } else {
-        res.status(404).json({ error: 'Project not found' });
-      }
+        // Query the database for the project name based on project ID
+        const [project] = await db.promise().query(
+            'SELECT name FROM projects WHERE id = ?',
+            [projectId]
+        );
+
+        // If project is found
+        if (project.length > 0) {
+            res.status(200).json({ projectName: project[0].name });
+        } else {
+            res.status(404).json({ error: 'Project not found' });
+        }
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Failed to fetch project' });
+        console.error(error);
+        res.status(500).json({ error: 'Failed to retrieve project name' });
     }
 });
+
 module.exports = router;

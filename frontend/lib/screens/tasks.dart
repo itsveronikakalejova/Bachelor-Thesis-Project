@@ -78,19 +78,40 @@ class _TasksPageState extends State<TasksPage> {
 
   Future<void> deleteTask(Task task, String column) async {
     bool delete = await _showDeleteTaskDialog(task, column);
-    
+
     if (delete == true) {
-      setState(() {
-        if (column == 'To Do') {
-          toDoTasks.remove(task);
-        } else if (column == 'Doing') {
-          doingTasks.remove(task);
-        } else if (column == 'Done') {
-          doneTasks.remove(task);
+      try {
+        final response = await http.delete(
+          Uri.parse('http://localhost:3000/tasks/delete-task'),
+          headers: <String, String>{
+            'Content-Type': 'application/json',
+          },
+          body: json.encode({
+            'taskName': task.name,  // Odoslanie názvu úlohy na odstránenie
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          // Úspešne odstránené z databázy, aktualizujeme UI
+          setState(() {
+            if (column == 'To Do') {
+              toDoTasks.remove(task);
+            } else if (column == 'Doing') {
+              doingTasks.remove(task);
+            } else if (column == 'Done') {
+              doneTasks.remove(task);
+            }
+          });
+          print('Task deleted successfully');
+        } else {
+          print('Failed to delete task: ${json.decode(response.body)['error']}');
         }
-      });
+      } catch (error) {
+        print('Error deleting task: $error');
+      }
     }
   }
+
 
   Future<void> moveTask(Task task, String fromColumn, String toColumn) async {
     setState(() {
