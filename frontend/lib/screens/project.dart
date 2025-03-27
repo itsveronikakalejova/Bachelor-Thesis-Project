@@ -168,6 +168,7 @@ class _ProjectPageState extends State<ProjectPage> {
     }
   }
 
+
   Future<void> addFileToDatabase(String fileName) async {
     final text = _contentController.text;
 

@@ -272,7 +272,7 @@ class _TasksPageState extends State<TasksPage> {
             Expanded(
               child: ListView(
                 children: tasks.isEmpty
-                    ? [Text('No tasks available')] // Display a message when no tasks are available
+                    ? [Text('No tasks!')] // Display a message when no tasks are available
                     : tasks.map((task) {
                         return _buildTaskCard(task, columnTitle);
                       }).toList(),
