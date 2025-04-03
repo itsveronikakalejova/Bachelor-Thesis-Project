@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sesh/screens/groupChatScreen.dart';
+import 'package:sesh/widgets/colors.dart';
 import 'package:sesh/widgets/sideBar.dart';
 import 'package:sesh/widgets/project_model.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -22,6 +23,7 @@ class ProjectPage extends StatefulWidget {
 class _ProjectPageState extends State<ProjectPage> {
   late IO.Socket socket;
   final TextEditingController _contentController = TextEditingController();
+  List<Map<String, dynamic>> tasks = []; 
   bool isLoading = false;
   List<Map<String, dynamic>> projectFiles = [];
   String currentFileName = 'text_input.txt';
@@ -31,6 +33,7 @@ class _ProjectPageState extends State<ProjectPage> {
     super.initState();
     _connectToSocket();
     _fetchProjectFiles();
+    _fetchTasks(); 
   }
 
   void _connectToSocket() {
@@ -141,6 +144,79 @@ class _ProjectPageState extends State<ProjectPage> {
       return ''; // Return empty string if fetch fails
     }
   }
+
+  Future<void> _fetchTasks() async {
+    String projectName = await _fetchProjectName();
+    
+    if (projectName.isEmpty) {
+      print("Project name is empty. Cannot fetch tasks.");
+      return;
+    }
+
+    final url = Uri.parse('http://localhost:3000/tasks/tasks-by-project?projectName=$projectName');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = jsonDecode(response.body);
+
+        if (!mounted) return; // Skontrolujeme, či je widget stále nažive
+
+        setState(() {
+          tasks = data.map((task) => {
+            'id': task['id'],
+            'task_name': task['task_name'],
+            'description': task['description'],
+            'status': task['status'],
+            'deadline': task['deadline'],
+            'assigned_to': task['assigned_to']
+          }).toList();
+        });
+      } else {
+        print('Failed to load tasks: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error fetching tasks: $error');
+    }
+  }
+
+
+  Future<void> updateTaskStatus(String taskName, bool isDone) async {
+    String newStatus = isDone ? 'done' : 'todo'; 
+
+    try {
+      final response = await http.put(
+        Uri.parse('http://localhost:3000/tasks/update-status'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'taskName': taskName,  // Poslanie názvu úlohy (backend vyhľadá ID)
+          'newStatus': newStatus, // Poslanie nového stavu
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Task status updated successfully');
+
+        // Aktualizuj lokálny stav v UI po úspešnom update
+        setState(() {
+          for (var task in tasks) {
+            if (task['task_name'] == taskName) {
+              task['status'] = newStatus;
+            }
+          }
+        });
+      } else {
+        print('Failed to update task status: ${json.decode(response.body)['error']}');
+      }
+    } catch (error) {
+      print('Error updating task status: $error');
+    }
+  }
+
+
 
   Future<void> saveTextInput() async {
     final text = _contentController.text;
@@ -382,6 +458,7 @@ class _ProjectPageState extends State<ProjectPage> {
                   ),
                 ),
                 Expanded(
+                  flex: 3,
                   child: Container(
                     color: const Color.fromARGB(255, 55, 63, 59),
                     padding: const EdgeInsets.all(16.0),
@@ -411,6 +488,67 @@ class _ProjectPageState extends State<ProjectPage> {
                     ),
                   ),
                 ),
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    color: myGreen,
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Tasks",
+                          style: TextStyle(fontSize: 20, color: Colors.black),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: tasks.isEmpty
+                              ? const Center(child: Text("No tasks!", style: TextStyle(color: Colors.black)))
+                              : ListView.builder(
+                                  itemCount: tasks.length,
+                                  itemBuilder: (context, index) {
+                                    bool isDone = tasks[index]['status'] == 'done';
+
+                                    return Card(
+                                      color: Colors.white,
+                                      margin: const EdgeInsets.symmetric(vertical: 4),
+                                      child: ListTile(
+                                        leading: Checkbox(
+                                          value: isDone,
+                                          onChanged: (bool? newValue) {
+                                            if (newValue != null) {
+                                              updateTaskStatus(tasks[index]['task_name'], newValue);
+                                            }
+                                          },
+                                        ),
+                                        title: Text(
+                                          tasks[index]['task_name'],
+                                          style: const TextStyle(color: Colors.black),
+                                        ),
+                                        subtitle: Text(
+                                          "Status: ${tasks[index]['status']}",
+                                          style: const TextStyle(color: Colors.grey),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                        const SizedBox(height: 8), // Medzera medzi zoznamom a tlačidlom
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.add, color: Colors.white),
+                          label: const Text("Add Task", style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          ),
+                          onPressed: _showAddTaskDialog,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
               ],
             ),
           ),
@@ -444,4 +582,89 @@ class _ProjectPageState extends State<ProjectPage> {
       ),
     );
   }
+
+void _showAddTaskDialog() {
+  TextEditingController taskNameController = TextEditingController();
+  TextEditingController taskDescriptionController = TextEditingController();
+  TextEditingController taskDeadlineController = TextEditingController();
+  String status = 'todo';  // Predvolený status úlohy
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Add New Task'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: taskNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Task Name',
+                ),
+              ),
+              TextField(
+                controller: taskDescriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                ),
+              ),
+              TextField(
+                controller: taskDeadlineController,
+                decoration: const InputDecoration(
+                  labelText: 'Deadline (YYYY-MM-DD)',
+                ),
+                keyboardType: TextInputType.datetime,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              String projectName = await _fetchProjectName(); // Získa názov projektu
+              if (projectName.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Project name not found!')),
+                );
+                return;
+              }
+
+              final response = await http.post(
+                Uri.parse('http://localhost:3000/tasks/add-task'),
+                headers: <String, String>{
+                  'Content-Type': 'application/json',
+                },
+                body: json.encode({
+                  'task_name': taskNameController.text,
+                  'description': taskDescriptionController.text,
+                  'status': status,
+                  'project_name': projectName,  // Automaticky priraď projekt
+                  'userName': widget.username,
+                }),
+              );
+
+              if (response.statusCode == 201) {
+                _fetchTasks(); // Obnoví zoznam úloh
+                Navigator.of(context).pop();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('Failed to add task: ${json.decode(response.body)['error']}'),
+                ));
+              }
+            },
+            child: const Text('Add'),
+          ),
+        ],
+      );
+    },
+  );
+}
 }

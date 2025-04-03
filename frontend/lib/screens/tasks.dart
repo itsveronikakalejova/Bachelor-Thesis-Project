@@ -375,97 +375,96 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   void _showAddTaskDialog() {
-  TextEditingController taskNameController = TextEditingController();
-  TextEditingController taskDescriptionController = TextEditingController();
-  TextEditingController taskDeadlineController = TextEditingController();
-  TextEditingController taskProjectController = TextEditingController();  // New controller for project name
-  String assignedTo = globals.username;  // Assuming 'globals.username' holds the username of the logged-in user.
-  String status = 'todo';  // Default status to 'To Do'
+    TextEditingController taskNameController = TextEditingController();
+    TextEditingController taskDescriptionController = TextEditingController();
+    TextEditingController taskDeadlineController = TextEditingController();
+    TextEditingController taskProjectController = TextEditingController();  // New controller for project name
+    String assignedTo = globals.username;  // Assuming 'globals.username' holds the username of the logged-in user.
+    String status = 'todo';  // Default status to 'To Do'
 
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Add New Task'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: taskNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Task Name',
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add New Task'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: taskNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Task Name',
+                  ),
                 ),
-              ),
-              TextField(
-                controller: taskDescriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
+                TextField(
+                  controller: taskDescriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                  ),
                 ),
-              ),
-              TextField(
-                controller: taskProjectController,
-                decoration: const InputDecoration(
-                  labelText: 'Project Name',
+                TextField(
+                  controller: taskProjectController,
+                  decoration: const InputDecoration(
+                    labelText: 'Project Name',
+                  ),
                 ),
-              ),
-              TextField(
-                controller: taskDeadlineController,
-                decoration: const InputDecoration(
-                  labelText: 'Deadline (e.g., 2024-04-30)',
+                TextField(
+                  controller: taskDeadlineController,
+                  decoration: const InputDecoration(
+                    labelText: 'Deadline (e.g., 2024-04-30)',
+                  ),
+                  keyboardType: TextInputType.datetime,
                 ),
-                keyboardType: TextInputType.datetime,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              // Add the task to the backend (server)
-              final response = await http.post(
-                Uri.parse('http://localhost:3000/tasks/add-task'),
-                headers: <String, String>{
-                  'Content-Type': 'application/json',
-                },
-                body: json.encode({
-                  'task_name': taskNameController.text,
-                  'description': taskDescriptionController.text,
-                  'status': status,  // Default status 'todo'
-                  'project_name': taskProjectController.text,  // Project name from input field
-                  'userName': assignedTo,  // Sending logged-in user's username
-                }),
-              );
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                // Add the task to the backend (server)
+                final response = await http.post(
+                  Uri.parse('http://localhost:3000/tasks/add-task'),
+                  headers: <String, String>{
+                    'Content-Type': 'application/json',
+                  },
+                  body: json.encode({
+                    'task_name': taskNameController.text,
+                    'description': taskDescriptionController.text,
+                    'status': status,  // Default status 'todo'
+                    'project_name': taskProjectController.text,  // Project name from input field
+                    'userName': assignedTo,  // Sending logged-in user's username
+                  }),
+                );
 
-              if (response.statusCode == 201) {
-                // If the task was successfully added, update the UI
-                setState(() {
-                  toDoTasks.add(Task(
-                    name: taskNameController.text,
-                    tag: taskProjectController.text,  // Using project name as the 'tag'
-                    status: status,
+                if (response.statusCode == 201) {
+                  // If the task was successfully added, update the UI
+                  setState(() {
+                    toDoTasks.add(Task(
+                      name: taskNameController.text,
+                      tag: taskProjectController.text,  // Using project name as the 'tag'
+                      status: status,
+                    ));
+                  });
+                  Navigator.of(context).pop();  // Close the dialog
+                } else {
+                  // If something went wrong, show an error message
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Failed to add task: ${json.decode(response.body)['error']}'),
                   ));
-                });
-                Navigator.of(context).pop();  // Close the dialog
-              } else {
-                // If something went wrong, show an error message
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Failed to add task: ${json.decode(response.body)['error']}'),
-                ));
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

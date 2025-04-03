@@ -153,5 +153,44 @@ router.delete('/delete-task', async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
+// Get all tasks associated with a specific project name
+router.get('/tasks-by-project', (req, res) => {
+  const { projectName } = req.query;
+
+  if (!projectName) {
+    return res.status(400).json({ error: 'Project name is required' });
+  }
+
+  // First, find the project ID using the provided project name
+  const findProjectQuery = 'SELECT id FROM projects WHERE name = ?';
+  db.query(findProjectQuery, [projectName], (err, projectResult) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (projectResult.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const projectId = projectResult[0].id;
+
+    // Now, fetch all tasks associated with this project ID
+    const fetchTasksQuery = `
+      SELECT tasks.id, tasks.task_name, tasks.description, tasks.status, tasks.deadline, users.username AS assigned_to
+      FROM tasks
+      JOIN users ON tasks.assigned_to = users.id
+      WHERE tasks.project_id = ?
+    `;
+
+    db.query(fetchTasksQuery, [projectId], (err, taskResults) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json(taskResults);
+    });
+  });
+});
+
   
 module.exports = router;
