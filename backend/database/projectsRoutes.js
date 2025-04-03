@@ -204,4 +204,41 @@ router.get('/project/:id', async (req, res) => {
     }
 });
 
+router.get('/project/owner/:projectName', (req, res) => {
+    const { projectName } = req.params;
+
+    if (!projectName) {
+        return res.status(400).json({ error: 'Project name is required' });
+    }
+
+    // Získať owner_id na základe mena projektu
+    const getProjectSql = 'SELECT owner_id FROM projects WHERE name = ?';
+    db.query(getProjectSql, [projectName], (err, projectResults) => {
+        if (err) {
+            console.error("Error fetching project:", err);
+            return res.status(500).json({ error: 'Failed to fetch project' });
+        }
+        if (projectResults.length === 0) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+
+        const ownerId = projectResults[0].owner_id;
+
+        // Získať meno vlastníka na základe owner_id
+        const getOwnerSql = 'SELECT username FROM users WHERE id = ?';
+        db.query(getOwnerSql, [ownerId], (err, ownerResults) => {
+            if (err) {
+                console.error("Error fetching owner:", err);
+                return res.status(500).json({ error: 'Failed to fetch project owner' });
+            }
+            if (ownerResults.length === 0) {
+                return res.status(404).json({ error: 'Owner not found' });
+            }
+
+            res.status(200).json({ ownerName: ownerResults[0].username });
+        });
+    });
+});
+
+
 module.exports = router;

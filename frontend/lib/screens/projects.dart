@@ -38,24 +38,50 @@ class _ProjectsPageState extends State<ProjectsPage> {
           .map((data) => Project.fromJson(data))
           .toList();
 
-      // Remove duplicates by checking if the project already exists based on ID or name
       setState(() {
         projects = [];
         for (var project in fetchedProjects) {
-          // Check if project already exists in the list by comparing IDs or names
           bool exists = projects.any((existingProject) =>
               existingProject.id == project.id || existingProject.name == project.name);
-
           if (!exists) {
             projects.add(project);
           }
         }
         isLoading = false;
       });
+
+      // Po načítaní projektov zisťujeme, kto je ich vlastník
+      for (var project in projects) {
+        fetchProjectOwner(project);
+      }
     } else {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> fetchProjectOwner(Project project) async {
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/project/owner/${project.name}'), 
+      headers: {
+        'Authorization': 'Bearer ${globals.token}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final ownerData = json.decode(response.body);
+      final ownerName = ownerData['ownerName'];
+
+      print("Project: ${project.name}, Owner: $ownerName, Current User: ${globals.username}");
+
+      setState(() {
+        project.isOwner = ownerName == globals.username; // Nastavujeme správne v projekte
+      });
+
+      print("Project: ${project.name}, isOwner: ${project.isOwner}");
+    } else {
+      print("Error fetching owner for project ${project.name}: ${response.statusCode}");
     }
   }
 
@@ -223,48 +249,48 @@ class _ProjectsPageState extends State<ProjectsPage> {
     );
   }
 
-  Widget _buildProjectTile(BuildContext context, Project project) {
-    // Determine if the current user is the owner or an editor
-    Color projectColor = myGreen;
-    return Card(
-      color: projectColor,  // Apply color for owner or editor
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-      child: ListTile(
-        leading: const Icon(Icons.description, color: Colors.black),
-        title: Text(
-          project.name,
-          style: const TextStyle(fontSize: 18, color: Colors.black),
-        ),
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.black),
-          onSelected: (String value) {
-            if (value == 'delete') {
-              deleteProject(project);
-            }
-          },
-          itemBuilder: (BuildContext context) => [
-            const PopupMenuItem<String>(
-              value: 'delete',
-              child: Text('Delete Project'),
-            ),
-          ],
-        ),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProjectPage(
-                token: globals.token,
-                userId: globals.userId,
-                username: globals.username,
-                projectId: project.id,
-              ),
-            ),
-          );
-        },
+ Widget _buildProjectTile(BuildContext context, Project project) {
+  Color projectColor = project.isOwner ? myGreen : Colors.grey[300]!;
+
+  return Card(
+    color: projectColor,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+    child: ListTile(
+      leading: const Icon(Icons.description, color: Colors.black),
+      title: Text(
+        project.name,
+        style: const TextStyle(fontSize: 18, color: Colors.black),
       ),
-    );
-  }
+      trailing: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert, color: Colors.black),
+        onSelected: (String value) {
+          if (value == 'delete') {
+            deleteProject(project);
+          }
+        },
+        itemBuilder: (BuildContext context) => [
+          const PopupMenuItem<String>(
+            value: 'delete',
+            child: Text('Delete Project'),
+          ),
+        ],
+      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProjectPage(
+              token: globals.token,
+              userId: globals.userId,
+              username: globals.username,
+              projectId: project.id,
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
 
   void _showAddProjectDialog() {
     TextEditingController projectNameController = TextEditingController();

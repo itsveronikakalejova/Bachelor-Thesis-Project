@@ -1,8 +1,13 @@
 class Project {
   final int id;
   final String name;
+  bool isOwner;
 
-  Project({required this.id, required this.name});
+  Project({
+    required this.id,
+    required this.name,
+    this.isOwner = false,
+  });
 
   factory Project.fromJson(Map<String, dynamic> json) {
     return Project(
@@ -10,6 +15,4 @@ class Project {
       name: json['name'],
     );
   }
-
-  get role => null;
 }
