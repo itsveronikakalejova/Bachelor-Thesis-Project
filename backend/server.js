@@ -9,6 +9,7 @@ const projectsRoutes = require('./database/projectsRoutes');
 const userRoutes = require('./database/userRoutes'); 
 const shareProjectRoutes = require('./controllers/shareProject'); 
 const tasksRoutes = require('./database/tasks');
+const messagesRoutes = require('./database/messages');
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +25,7 @@ app.use('/', projectsRoutes);
 app.use('/api', userRoutes); 
 app.use(shareProjectRoutes); 
 app.use('/tasks', tasksRoutes);
+app.use('/messages', messagesRoutes);
 
 initializeSocket(server); 
 

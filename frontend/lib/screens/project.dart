@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:sesh/screens/groupChatScreen.dart';
 import 'package:sesh/widgets/sideBar.dart';
+import 'package:sesh/widgets/project_model.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:sesh/widgets/shareDialog.dart';
 import 'package:http/http.dart' as http;
@@ -267,10 +269,23 @@ class _ProjectPageState extends State<ProjectPage> {
       appBar: AppBar(
         automaticallyImplyLeading: true,
         backgroundColor: Colors.white,
-        title: const Text(
-          'IPC Project',
-          style: TextStyle(color: Colors.black),
-        ),
+        title: FutureBuilder<String>(
+        future: _fetchProjectName(), // Call the async method here
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();  // Display a loading indicator while waiting
+          } else if (snapshot.hasError) {
+            return const Text("Error loading project");
+          } else if (snapshot.hasData) {
+            return Text(
+              snapshot.data!,  // Display the project name
+              style: const TextStyle(color: Colors.black),
+            );
+          } else {
+            return const Text("No Project Name");
+          }
+        },
+      ),
         actions: [
           TextButton(
             onPressed: () {
@@ -319,6 +334,22 @@ class _ProjectPageState extends State<ProjectPage> {
                       },
                       child: const Text(
                         'Share',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    TextButton(
+                      onPressed: () async {
+                        String projectName = await _fetchProjectName();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GroupChatScreen(projectName: projectName, projectId: widget.projectId),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'Open Group Chat',
                         style: TextStyle(color: Colors.black),
                       ),
                     ),
