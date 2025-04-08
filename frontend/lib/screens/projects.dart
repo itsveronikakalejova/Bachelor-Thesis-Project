@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:sesh/screens/project.dart';
 import 'package:sesh/widgets/globals.dart' as globals;
 import 'package:sesh/widgets/project_model.dart';
+import 'package:sesh/widgets/shareDialog.dart';
 
 
 class ProjectsPage extends StatefulWidget {
@@ -50,7 +51,6 @@ class _ProjectsPageState extends State<ProjectsPage> {
         isLoading = false;
       });
 
-      // Po načítaní projektov zisťujeme, kto je ich vlastník
       for (var project in projects) {
         fetchProjectOwner(project);
       }
@@ -259,48 +259,56 @@ class _ProjectsPageState extends State<ProjectsPage> {
     );
   }
 
- Widget _buildProjectTile(BuildContext context, Project project) {
-  Color projectColor = project.isOwner ? myGreen : Colors.grey[300]!;
+  Widget _buildProjectTile(BuildContext context, Project project) {
+    Color projectColor = project.isOwner ? myGreen : Colors.grey[300]!;
 
-  return Card(
-    color: projectColor,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
-    child: ListTile(
-      leading: const Icon(Icons.description, color: Colors.black),
-      title: Text(
-        project.name,
-        style: const TextStyle(fontSize: 18, color: Colors.black),
-      ),
-      trailing: PopupMenuButton<String>(
-        icon: const Icon(Icons.more_vert, color: Colors.black),
-        onSelected: (String value) {
-          if (value == 'delete') {
-            deleteProject(project);
-          }
-        },
-        itemBuilder: (BuildContext context) => [
-          const PopupMenuItem<String>(
-            value: 'delete',
-            child: Text('Delete Project'),
-          ),
-        ],
-      ),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProjectPage(
-              token: globals.token,
-              userId: globals.userId,
-              username: globals.username,
-              projectId: project.id,
+    return Card(
+      color: projectColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+      child: ListTile(
+        leading: const Icon(Icons.description, color: Colors.black),
+        title: Text(
+          project.name,
+          style: const TextStyle(fontSize: 18, color: Colors.black),
+        ),
+        trailing: PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.black),
+          onSelected: (String value) {
+            if (value == 'delete') {
+              deleteProject(project);
+            } else if (value == 'share') {
+              // Call the sharedialog function with the project name and a default privilege
+              showShareDialog(context, project.name, 'read'); // 'read' can be adjusted to your needs
+            }
+          },
+          itemBuilder: (BuildContext context) => [
+            const PopupMenuItem<String>(
+              value: 'delete',
+              child: Text('Delete Project'),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+            const PopupMenuItem<String>(
+              value: 'share',
+              child: Text('Share Project'),
+            ),
+          ],
+        ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ProjectPage(
+                token: globals.token,
+                userId: globals.userId,
+                username: globals.username,
+                projectId: project.id,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
 
   void _showAddProjectDialog() {
     TextEditingController projectNameController = TextEditingController();

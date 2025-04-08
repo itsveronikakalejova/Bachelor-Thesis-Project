@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:sesh/widgets/colors.dart';
 import 'package:sesh/widgets/sideBar.dart';
 import 'package:sesh/widgets/globals.dart' as globals;
 
@@ -9,17 +10,25 @@ class Task {
   String name;
   String tag;
   String status;
+  int? projectId;
 
-  Task({required this.name, required this.tag, required this.status});
+  Task({
+    required this.name,
+    required this.tag,
+    required this.status,
+    this.projectId,
+  });
 
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
       name: json['task_name'],
       tag: json['description'],
       status: json['status'],
+      projectId: json['project_id'],
     );
   }
 }
+
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -74,7 +83,18 @@ class _TasksPageState extends State<TasksPage> {
     }
   }
 
+  Future<String> fetchProjectName(int? projectId) async {
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/projects/${projectId}'),
+    );
 
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['name']; // Return project name
+    } else {
+      return ''; // Return empty string if fetch fails
+    }
+  }
 
   Future<void> deleteTask(Task task, String column) async {
     bool delete = await _showDeleteTaskDialog(task, column);
@@ -290,21 +310,48 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
-
   Widget _buildTaskCard(Task task, String column) {
     return Card(
       color: const Color.fromARGB(255, 214, 243, 243),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
       child: SizedBox(
-        height: 150.0, 
+        height: 200.0,
         child: ListTile(
           title: Text(
             task.name,
             style: const TextStyle(fontSize: 30, color: Colors.black),
           ),
-          subtitle: Text(
-            task.tag,
-            style: const TextStyle(fontSize: 20, color: Colors.grey),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Display task name and project name in parentheses
+              FutureBuilder<String>(
+                future: fetchProjectName(task.projectId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Text(
+                      'Loading project...',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    );
+                  } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == '') {
+                    return const Text(
+                      'Project not found',
+                      style: TextStyle(fontSize: 16, color: Colors.red),
+                    );
+                  } else {
+                    return Text(
+                      '(${snapshot.data})', // Display project name in parentheses
+                      style: const TextStyle(fontSize: 16, color: myBlack),
+                    );
+                  }
+                },
+              ),
+              // Display the task's tag (description)
+              Text(
+                task.tag,  // Show tag/description
+                style: const TextStyle(fontSize: 20, color: Colors.grey),
+              ),
+            ],
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -352,7 +399,9 @@ class _TasksPageState extends State<TasksPage> {
       ),
     );
   }
-    Future<bool> _showDeleteTaskDialog(Task task, String column) async {
+
+
+  Future<bool> _showDeleteTaskDialog(Task task, String column) async {
     bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {

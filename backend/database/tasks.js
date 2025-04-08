@@ -192,5 +192,43 @@ router.get('/tasks-by-project', (req, res) => {
   });
 });
 
-  
+router.get('/project-info', (req, res) => {
+  const { taskId } = req.query;
+
+  if (!taskId) {
+    return res.status(400).json({ error: 'Task ID is required' });
+  }
+
+  const getProjectIdQuery = 'SELECT project_id FROM tasks WHERE id = ?';
+  db.query(getProjectIdQuery, [taskId], (err, projectIdResult) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (projectIdResult.length === 0) {
+      return res.status(404).json({ error: 'Task not found or has no project assigned' });
+    }
+
+    const projectId = projectIdResult[0].project_id;
+
+    const getProjectNameQuery = 'SELECT name FROM projects WHERE id = ?';
+    db.query(getProjectNameQuery, [projectId], (err, projectNameResult) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (projectNameResult.length === 0) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      res.json({
+        project_id: projectId,
+        project_name: projectNameResult[0].name
+      });
+    });
+  });
+});
+
+ 
+
 module.exports = router;

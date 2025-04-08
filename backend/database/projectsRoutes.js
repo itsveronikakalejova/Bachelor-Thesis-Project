@@ -162,7 +162,7 @@ router.get('/projects/:projectId/files/:fileId', (req, res) => {
 });
 
 // Fetch project details (including project name)
-router.get('/projects/:projectId/details', (req, res) => {
+router.get('/projects/:projectId', (req, res) => {
     const { projectId } = req.params;
     const sql = "SELECT name FROM projects WHERE id = ?";
     db.query(sql, [projectId], (err, results) => {
@@ -178,31 +178,6 @@ router.get('/projects/:projectId/details', (req, res) => {
     });
 });
 
-router.get('/project/:id', async (req, res) => {
-    const projectId = req.params.id;  // Get project ID from URL parameter
-
-    if (!projectId) {
-        return res.status(400).json({ error: 'Project ID is required' });
-    }
-
-    try {
-        // Query the database for the project name based on project ID
-        const [project] = await db.promise().query(
-            'SELECT name FROM projects WHERE id = ?',
-            [projectId]
-        );
-
-        // If project is found
-        if (project.length > 0) {
-            res.status(200).json({ projectName: project[0].name });
-        } else {
-            res.status(404).json({ error: 'Project not found' });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to retrieve project name' });
-    }
-});
 
 router.get('/project/owner/:projectName', (req, res) => {
     const { projectName } = req.params;

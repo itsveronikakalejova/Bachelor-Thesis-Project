@@ -127,7 +127,7 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Future<String> _fetchProjectName() async {
     final response = await http.get(
-      Uri.parse('http://localhost:3000/projects/${widget.projectId}/details'),
+      Uri.parse('http://localhost:3000/projects/${widget.projectId}'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
       },
@@ -138,9 +138,6 @@ class _ProjectPageState extends State<ProjectPage> {
       print("Project Data: $data");  // Debugging line
       return data['name']; // Return project name
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch project name')),
-      );
       return ''; // Return empty string if fetch fails
     }
   }
@@ -395,13 +392,27 @@ class _ProjectPageState extends State<ProjectPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                TextButton(
-                  onPressed: _showAddFileDialog,
-                  child: const Text(
-                    'Add File',
-                    style: TextStyle(color: Colors.black),
-                  ),
+                // Add File and Save File buttons next to each other
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: _showAddFileDialog,
+                      child: const Text(
+                        'Add File',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: saveTextInput,
+                      child: const Text(
+                        'Save File',
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                  ],
                 ),
+                
+                // Other buttons at the end
                 Row(
                   children: [
                     TextButton(
@@ -437,14 +448,6 @@ class _ProjectPageState extends State<ProjectPage> {
                       },
                       child: const Text(
                         'Open Group Chat',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    TextButton(
-                      onPressed: saveTextInput,
-                      child: const Text(
-                        'Save File',
                         style: TextStyle(color: Colors.black),
                       ),
                     ),
@@ -532,13 +535,25 @@ class _ProjectPageState extends State<ProjectPage> {
                                             }
                                           },
                                         ),
-                                        title: Text(
-                                          tasks[index]['task_name'],
-                                          style: const TextStyle(color: Colors.black),
+                                        title: GestureDetector(
+                                          onTap: () {
+                                            // Open task details dialog when the task name is tapped
+                                            showTaskDetailsDialog(tasks[index]);
+                                          },
+                                          child: Text(
+                                            tasks[index]['task_name'],
+                                            style: const TextStyle(color: Colors.black),
+                                          ),
                                         ),
-                                        subtitle: Text(
-                                          "Status: ${tasks[index]['status']}",
-                                          style: const TextStyle(color: Colors.grey),
+                                        subtitle: GestureDetector(
+                                          onTap: () {
+                                            // Open task details dialog when the status is tapped
+                                            showTaskDetailsDialog(tasks[index]);
+                                          },
+                                          child: Text(
+                                            "Status: ${tasks[index]['status']}",
+                                            style: const TextStyle(color: Colors.grey),
+                                          ),
                                         ),
                                       ),
                                     );
@@ -593,6 +608,35 @@ class _ProjectPageState extends State<ProjectPage> {
       ),
     );
   }
+
+  void showTaskDetailsDialog(Map<String, dynamic> task) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(task['task_name']),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Status: ${task['status']}"),
+              const SizedBox(height: 8),
+              Text("Task Description: ${task['description'] ?? 'No description'}"),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); 
+              },
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
 void _showAddTaskDialog() {
   TextEditingController taskNameController = TextEditingController();
