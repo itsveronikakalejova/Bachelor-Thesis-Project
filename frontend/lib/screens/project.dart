@@ -26,7 +26,7 @@ class _ProjectPageState extends State<ProjectPage> {
   List<Map<String, dynamic>> tasks = []; 
   bool isLoading = false;
   List<Map<String, dynamic>> projectFiles = [];
-  String currentFileName = 'text_input.txt';
+  String currentFileName = 'untitled.txt';
 
   @override
   void initState() {
@@ -327,21 +327,28 @@ class _ProjectPageState extends State<ProjectPage> {
     super.dispose();
   }
 
+  void cleanupAndNavigate(String route) {
+    if (socket.connected) {
+      socket.disconnect();
+      socket.dispose();
+    }
+    Navigator.pop(context);
+    Future.delayed(const Duration(milliseconds: 300), () {
+      Navigator.pushNamed(context, route);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 34, 34, 34),
       drawer: SideBar(
-        onProjectsTap: () {
-          Navigator.pushNamed(context, '/projects');
-        },
-        onChatsTap: () {
-          Navigator.pushNamed(context, '/chats');
-        },
-        onTasksTap: () {
-          Navigator.pushNamed(context, '/tasks');
-        },
+        onProjectsTap: () => cleanupAndNavigate('/projects'),
+        onChatsTap: () => cleanupAndNavigate('/chats'),
+        onTasksTap: () => cleanupAndNavigate('/tasks'),
       ),
+
+
       appBar: AppBar(
         automaticallyImplyLeading: true,
         backgroundColor: Colors.white,
@@ -365,6 +372,10 @@ class _ProjectPageState extends State<ProjectPage> {
         actions: [
           TextButton(
             onPressed: () {
+              if (socket.connected) {
+                socket.disconnect();
+                socket.dispose();
+              }
               Navigator.pop(context);
             },
             child: const Text(

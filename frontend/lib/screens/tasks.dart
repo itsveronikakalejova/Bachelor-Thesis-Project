@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:sesh/widgets/sideBar.dart';
 import 'package:sesh/widgets/globals.dart' as globals;
 
-GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
 class Task {
   String name;
@@ -30,6 +29,7 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<Task> toDoTasks = [];
   List<Task> doingTasks = [];
   List<Task> doneTasks = [];
@@ -176,16 +176,22 @@ class _TasksPageState extends State<TasksPage> {
       backgroundColor: Colors.white,
       drawer: SideBar(
         onProjectsTap: () {
-          Navigator.pop(context);
-          Navigator.pushNamed(context, '/projects');
+          Navigator.pop(context); // Zavrie Drawer
+          Future.delayed(const Duration(milliseconds: 300), () {
+            Navigator.pushNamed(context, '/projects');
+          });
         },
         onChatsTap: () {
           Navigator.pop(context);
-          Navigator.pushNamed(context, '/chats');
+          Future.delayed(const Duration(milliseconds: 300), () {
+            Navigator.pushNamed(context, '/chats');
+          });
         },
         onTasksTap: () {
           Navigator.pop(context);
-          Navigator.pushNamed(context, '/tasks');
+          Future.delayed(const Duration(milliseconds: 300), () {
+            Navigator.pushNamed(context, '/tasks');
+          });
         },
       ),
       appBar: AppBar(

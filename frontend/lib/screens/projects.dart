@@ -170,15 +170,25 @@ class _ProjectsPageState extends State<ProjectsPage> {
       backgroundColor: myWhite,
       drawer: SideBar(
         onProjectsTap: () {
-          Navigator.pushNamed(context, '/projects');
+          Navigator.pop(context);
+          Future.delayed(const Duration(milliseconds: 300), () {
+            Navigator.pushNamed(context, '/projects');
+          });
         },
         onChatsTap: () {
-          Navigator.pushNamed(context, '/chats');
+          Navigator.pop(context);
+          Future.delayed(const Duration(milliseconds: 300), () {
+            Navigator.pushNamed(context, '/chats');
+          });
         },
         onTasksTap: () {
-          Navigator.pushNamed(context, '/tasks');
+          Navigator.pop(context);
+          Future.delayed(const Duration(milliseconds: 300), () {
+            Navigator.pushNamed(context, '/tasks');
+          });
         },
       ),
+
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Text(
