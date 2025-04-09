@@ -3,14 +3,12 @@ const db = require('./db');
 
 const router = express.Router();
 
-// Get tasks assigned to the specified username
 router.get('/my-tasks', (req, res) => {
   const username = req.query.userName;
   if (!username) {
     return res.status(400).json({ error: 'Username is required' });
   }
 
-  // Query the database for tasks assigned to this user
   db.query('SELECT * FROM tasks WHERE assigned_to = (SELECT id FROM users WHERE username = ?)', [username], (err, results) => {
     if (err) {
       return res.status(500).json({ error: err.message });
@@ -19,16 +17,13 @@ router.get('/my-tasks', (req, res) => {
   });
 });
 
-// Add a new task
 router.post('/add-task', (req, res) => {
   const { task_name, description, status, project_name, userName, deadline } = req.body;
 
-  // Validate the required fields
   if (!task_name || !description || !status || !project_name || !userName || !deadline) {
     return res.status(400).json({ error: 'Task name, description, status, project_name, userName, and deadline are required' });
   }
 
-  // Step 1: Find the project_id using the provided project_name
   const findProjectQuery = 'SELECT id FROM projects WHERE name = ?';
   db.query(findProjectQuery, [project_name], (err, projectResult) => {
     if (err) {
@@ -41,7 +36,6 @@ router.post('/add-task', (req, res) => {
 
     const projectId = projectResult[0].id;
 
-    // Step 2: Find the user_id using the provided username
     const findUserQuery = 'SELECT id FROM users WHERE username = ?';
     db.query(findUserQuery, [userName], (err, userResult) => {
       if (err) {
@@ -54,7 +48,6 @@ router.post('/add-task', (req, res) => {
 
       const userId = userResult[0].id;
 
-      // Step 3: Insert the new task using the found project_id and user_id (assigned_to)
       const insertTaskQuery = 'INSERT INTO tasks (project_id, task_name, description, status, assigned_to, deadline) VALUES (?, ?, ?, ?, ?, ?)';
 
       db.query(insertTaskQuery, [projectId, task_name, description, status, userId, deadline], (err, result) => {
@@ -68,7 +61,6 @@ router.post('/add-task', (req, res) => {
 });
 
 
-// Delete a task
 router.delete('/delete-task/:taskId', (req, res) => {
   const { taskId } = req.params;
   
@@ -76,7 +68,6 @@ router.delete('/delete-task/:taskId', (req, res) => {
     return res.status(400).json({ error: 'Task ID is required' });
   }
 
-  // Delete the task from the database
   const query = 'DELETE FROM tasks WHERE id = ?';
   db.query(query, [taskId], (err, result) => {
     if (err) {
@@ -96,7 +87,6 @@ router.put('/update-status', (req, res) => {
         return res.status(400).json({ error: 'Task name and new status are required' });
     }
 
-    // First, find the task by taskName
     db.query(
         'SELECT id FROM tasks WHERE task_name = ?',
         [taskName],
@@ -112,7 +102,6 @@ router.put('/update-status', (req, res) => {
 
             const taskId = results[0].id;
 
-            // Now that we have the task ID, update the task status
             db.query(
                 'UPDATE tasks SET status = ? WHERE id = ?',
                 [newStatus, taskId],
@@ -153,7 +142,6 @@ router.delete('/delete-task', async (req, res) => {
     }
 });
 
-// Get all tasks associated with a specific project name
 router.get('/tasks-by-project', (req, res) => {
   const { projectName } = req.query;
 
@@ -161,7 +149,6 @@ router.get('/tasks-by-project', (req, res) => {
     return res.status(400).json({ error: 'Project name is required' });
   }
 
-  // First, find the project ID using the provided project name
   const findProjectQuery = 'SELECT id FROM projects WHERE name = ?';
   db.query(findProjectQuery, [projectName], (err, projectResult) => {
     if (err) {
@@ -174,7 +161,6 @@ router.get('/tasks-by-project', (req, res) => {
 
     const projectId = projectResult[0].id;
 
-    // Now, fetch all tasks associated with this project ID
     const fetchTasksQuery = `
       SELECT tasks.id, tasks.task_name, tasks.description, tasks.status, tasks.deadline, users.username AS assigned_to
       FROM tasks
@@ -228,6 +214,26 @@ router.get('/project-info', (req, res) => {
   });
 });
 
- 
+router.get('/project-id', (req, res) => {
+  const { project_name } = req.query;
+
+  if (!project_name) {
+    return res.status(400).json({ error: 'Project name is required' });
+  }
+
+  const query = 'SELECT id FROM projects WHERE name = ?';
+  db.query(query, [project_name], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    return res.json({ project_id: results[0].id });
+  });
+});
+
 
 module.exports = router;

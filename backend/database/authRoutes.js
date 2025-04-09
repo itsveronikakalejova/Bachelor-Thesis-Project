@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const db = require('./db');
 const router = express.Router();
 
-// registracia pouzivatela
 router.post('/register', async (req, res) => {
     const { username, email, password } = req.body;
     if (!username || !email || !password) return res.status(400).json({ message: "Vsetky polia su povinne." });
@@ -22,7 +21,6 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// prihlasenie pouzivatela
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
     db.query("SELECT * FROM users WHERE username = ?", [username], async (err, results) => {

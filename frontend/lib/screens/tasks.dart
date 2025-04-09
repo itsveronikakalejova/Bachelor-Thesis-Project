@@ -6,29 +6,29 @@ import 'package:sesh/widgets/sideBar.dart';
 import 'package:sesh/widgets/globals.dart' as globals;
 import 'package:intl/intl.dart';
 
-
 class Task {
-  String name;
-  String tag;
-  String status;
-  int? projectId;
+  final String name;
+  final String status;
+  final String tag;
+  final int? projectId; 
 
   Task({
     required this.name,
-    required this.tag,
     required this.status,
-    this.projectId,
+    required this.tag,
+    required this.projectId,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
       name: json['task_name'],
-      tag: json['description'],
       status: json['status'],
-      projectId: json['project_id'],
+      tag: json['description'],
+      projectId: json['project_id'], 
     );
   }
 }
+
 
 
 class TasksPage extends StatefulWidget {
@@ -59,28 +59,58 @@ class _TasksPageState extends State<TasksPage> {
 
   Future<void> fetchTasks() async {
     setState(() {
-      _isLoading = true; 
+      _isLoading = true;
     });
 
     try {
       final response = await http.get(Uri.parse('http://localhost:3000/tasks/my-tasks/?userName=${globals.username}'));
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
-        print('Fetched data: $data'); 
+        print('Fetched data: $data');
+
         setState(() {
-          toDoTasks = data.where((task) => task['status'] == 'todo').map((task) => Task.fromJson(task)).toList();
-          doingTasks = data.where((task) => task['status'] == 'doing').map((task) => Task.fromJson(task)).toList(); 
-          doneTasks = data.where((task) => task['status'] == 'done').map((task) => Task.fromJson(task)).toList();
-          _isLoading = false; 
+          toDoTasks = data
+              .where((task) => task['status'] == 'todo')
+              .map((task) => Task.fromJson(task))
+              .toList();
+          doingTasks = data
+              .where((task) => task['status'] == 'doing')
+              .map((task) => Task.fromJson(task))
+              .toList();
+          doneTasks = data
+              .where((task) => task['status'] == 'done')
+              .map((task) => Task.fromJson(task))
+              .toList();
+          
+          _isLoading = false;
         });
       } else {
         throw Exception('Failed to load tasks');
       }
     } catch (error) {
       setState(() {
-        _isLoading = false; 
+        _isLoading = false;
       });
       print(error);
+    }
+  }
+
+  Future<int?> fetchProjectIdByName(String projectName) async {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/tasks/project-id/?project_name=$projectName'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['project_id']; 
+      } else {
+        print('Error: Unable to fetch project id');
+        return null;
+      }
+    } catch (e) {
+      print('Error: $e');
+      return null;
     }
   }
 
@@ -481,6 +511,15 @@ class _TasksPageState extends State<TasksPage> {
                   DateTime parsedDeadline = DateFormat('yyyy-MM-dd').parse(deadline);
                   String formattedDeadline = DateFormat('yyyy-MM-dd HH:mm:ss').format(parsedDeadline);
 
+                  int? projectId = await fetchProjectIdByName(taskProjectController.text);
+
+                  if (projectId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Project not found. Please check the project name.')),
+                    );
+                    return;
+                  }
+
                   final response = await http.post(
                     Uri.parse('http://localhost:3000/tasks/add-task'),
                     headers: <String, String>{
@@ -492,7 +531,7 @@ class _TasksPageState extends State<TasksPage> {
                       'status': status,  
                       'project_name': taskProjectController.text,  
                       'userName': assignedTo,  
-                      'deadline': formattedDeadline,  
+                      'deadline': formattedDeadline
                     }),
                   );
 
@@ -501,7 +540,8 @@ class _TasksPageState extends State<TasksPage> {
                       toDoTasks.add(Task(
                         name: taskNameController.text,
                         status: status,
-                        tag: taskDescriptionController.text, 
+                        tag: taskDescriptionController.text,
+                        projectId: projectId,  
                       ));
                     });
                     Navigator.of(context).pop(); 
@@ -523,5 +563,4 @@ class _TasksPageState extends State<TasksPage> {
       },
     );
   }
-
 }
