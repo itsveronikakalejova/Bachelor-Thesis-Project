@@ -164,7 +164,7 @@ class _ChatScreenState extends State<ChatScreen> {
             color: const Color.fromARGB(255, 34, 34, 34),
             alignment: Alignment.center,
             child: const Text(
-              '© Veronika Kalejová 2024',
+              '© Veronika Kalejová 2025',
               style: TextStyle(color: Colors.white),
             ),
           ),

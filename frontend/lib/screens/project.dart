@@ -537,7 +537,6 @@ class _ProjectPageState extends State<ProjectPage> {
                                         ),
                                         title: GestureDetector(
                                           onTap: () {
-                                            // Open task details dialog when the task name is tapped
                                             showTaskDetailsDialog(tasks[index]);
                                           },
                                           child: Text(
@@ -547,15 +546,15 @@ class _ProjectPageState extends State<ProjectPage> {
                                         ),
                                         subtitle: GestureDetector(
                                           onTap: () {
-                                            // Open task details dialog when the status is tapped
                                             showTaskDetailsDialog(tasks[index]);
                                           },
                                           child: Text(
-                                            "Status: ${tasks[index]['status']}",
-                                            style: const TextStyle(color: Colors.grey),
+                                            tasks[index]['assigned_to'],
+                                            style: const TextStyle(color: Color.fromARGB(255, 19, 102, 76)),
                                           ),
                                         ),
                                       ),
+
                                     );
                                   },
                                 ),
@@ -583,7 +582,7 @@ class _ProjectPageState extends State<ProjectPage> {
             padding: const EdgeInsets.all(8.0),
             alignment: Alignment.center,
             child: const Text(
-              '© Veronika Kalejová 2024',
+              '© Veronika Kalejová 2025',
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -619,15 +618,19 @@ class _ProjectPageState extends State<ProjectPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("Status: ${task['status']}"),
+              _buildDetailText("Description", task['description'] ?? 'No description'),
               const SizedBox(height: 8),
-              Text("Task Description: ${task['description'] ?? 'No description'}"),
+              _buildDetailText("Status", task['status']),
+              const SizedBox(height: 8),
+              _buildDetailText("Deadline", task['deadline'] ?? 'No deadline'),
+              const SizedBox(height: 8),
+              _buildDetailText("Assigned to", task['assigned_to'] ?? 'Unassigned'),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); 
+                Navigator.of(context).pop(); // Close the dialog
               },
               child: const Text('Close'),
             ),
@@ -637,89 +640,156 @@ class _ProjectPageState extends State<ProjectPage> {
     );
   }
 
-
-void _showAddTaskDialog() {
-  TextEditingController taskNameController = TextEditingController();
-  TextEditingController taskDescriptionController = TextEditingController();
-  TextEditingController taskDeadlineController = TextEditingController();
-  String status = 'todo';  // Predvolený status úlohy
-
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: const Text('Add New Task'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: taskNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Task Name',
-                ),
-              ),
-              TextField(
-                controller: taskDescriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                ),
-              ),
-              TextField(
-                controller: taskDeadlineController,
-                decoration: const InputDecoration(
-                  labelText: 'Deadline (YYYY-MM-DD)',
-                ),
-                keyboardType: TextInputType.datetime,
-              ),
-            ],
+  // Pomocná funkcia na formátovanie riadkov s tučným názvom a bežnou hodnotou
+  Widget _buildDetailText(String label, String value) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(fontSize: 16, color: Colors.black),
+        children: [
+          TextSpan(
+            text: '$label: ',
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              String projectName = await _fetchProjectName(); // Získa názov projektu
-              if (projectName.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Project name not found!')),
-                );
-                return;
-              }
-
-              final response = await http.post(
-                Uri.parse('http://localhost:3000/tasks/add-task'),
-                headers: <String, String>{
-                  'Content-Type': 'application/json',
-                },
-                body: json.encode({
-                  'task_name': taskNameController.text,
-                  'description': taskDescriptionController.text,
-                  'status': status,
-                  'project_name': projectName,  // Automaticky priraď projekt
-                  'userName': widget.username,
-                }),
-              );
-
-              if (response.statusCode == 201) {
-                _fetchTasks(); // Obnoví zoznam úloh
-                Navigator.of(context).pop();
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Failed to add task: ${json.decode(response.body)['error']}'),
-                ));
-              }
-            },
-            child: const Text('Add'),
+          TextSpan(
+            text: value,
           ),
         ],
-      );
-    },
-  );
-}
+      ),
+    );
+  }
+
+  void _showAddTaskDialog() async {
+    TextEditingController taskNameController = TextEditingController();
+    TextEditingController taskDescriptionController = TextEditingController();
+    TextEditingController taskDeadlineController = TextEditingController();
+    String status = 'todo';
+    String? selectedUser;
+
+    List<String> privilegedUsers = await fetchPrivilegedUsers();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add New Task'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: taskNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Task Name',
+                  ),
+                ),
+                TextField(
+                  controller: taskDescriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                  ),
+                ),
+                TextField(
+                  controller: taskDeadlineController,
+                  decoration: const InputDecoration(
+                    labelText: 'Deadline (YYYY-MM-DD)',
+                  ),
+                  keyboardType: TextInputType.datetime,
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity, // Aby sa roztiahol na šírku dialógu
+                  child: DropdownButtonFormField<String>(
+                    value: selectedUser,
+                    decoration: const InputDecoration(
+                      labelText: 'Assign To',
+                    ),
+                    items: privilegedUsers.map((username) {
+                      return DropdownMenuItem<String>(
+                        value: username,
+                        child: Text(username),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedUser = newValue;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                String projectName = await _fetchProjectName();
+                if (projectName.isEmpty || selectedUser == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please complete all fields.')),
+                  );
+                  return;
+                }
+
+                final response = await http.post(
+                  Uri.parse('http://localhost:3000/tasks/add-task'),
+                  headers: <String, String>{
+                    'Content-Type': 'application/json',
+                  },
+                  body: json.encode({
+                    'task_name': taskNameController.text,
+                    'description': taskDescriptionController.text,
+                    'status': status,
+                    'project_name': projectName,
+                    'userName': selectedUser, // Priradený používateľ
+                  }),
+                );
+
+                if (response.statusCode == 201) {
+                  _fetchTasks();
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('Failed to add task: ${json.decode(response.body)['error']}'),
+                  ));
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  
+  Future<List<String>> fetchPrivilegedUsers() async {
+    // Získame názov projektu pomocou funkcie _fetchProjectName
+    String projectName = await _fetchProjectName();
+
+    if (projectName.isEmpty) {
+      throw Exception('Project name not found');
+    }
+
+    // Získame zoznam používateľov s prístupom k projektu
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/project/users-with-access?project_name=$projectName'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map<String>((user) => user['username'].toString()).toList();
+    } else {
+      throw Exception('Failed to fetch privileged users: ${response.body}');
+    }
+  }
+
 }

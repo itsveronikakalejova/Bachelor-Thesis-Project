@@ -215,5 +215,66 @@ router.get('/project/owner/:projectName', (req, res) => {
     });
 });
 
+// GET /project/users-with-access?project_name=...
+router.get('/project/users-with-access', (req, res) => {
+    const { project_name } = req.query;
+  
+    if (!project_name) {
+      return res.status(400).json({ error: 'Missing project_name' });
+    }
+  
+    // Najprv zistíme ID a owner_id projektu
+    const projectQuery = 'SELECT id, owner_id FROM projects WHERE name = ?';
+    db.query(projectQuery, [project_name], (err, projectResult) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error', details: err.message });
+      }
+  
+      if (projectResult.length === 0) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+  
+      const projectId = projectResult[0].id;
+      const ownerId = projectResult[0].owner_id;
+  
+      // Získaj username vlastníka
+      const ownerQuery = 'SELECT username FROM users WHERE id = ?';
+      db.query(ownerQuery, [ownerId], (err, ownerResult) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error (owner)', details: err.message });
+        }
+  
+        const ownerUsername = ownerResult.length > 0 ? ownerResult[0].username : null;
+  
+        // Získaj editorov
+        const editorsQuery = `
+          SELECT users.username
+          FROM project_users
+          JOIN users ON project_users.user_id = users.id
+          WHERE project_users.project_id = ?
+        `;
+  
+        db.query(editorsQuery, [projectId], (err, editorsResult) => {
+          if (err) {
+            return res.status(500).json({ error: 'Database error (editors)', details: err.message });
+          }
+  
+          const usersWithAccess = [];
+  
+          if (ownerUsername) {
+            usersWithAccess.push({ username: ownerUsername, role: 'owner' });
+          }
+  
+          editorsResult.forEach((row) => {
+            usersWithAccess.push({ username: row.username, role: 'editor' });
+          });
+  
+          return res.json(usersWithAccess);
+        });
+      });
+    });
+  });
+  
+  
 
 module.exports = router;

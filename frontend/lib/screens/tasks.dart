@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:sesh/widgets/colors.dart';
 import 'package:sesh/widgets/sideBar.dart';
 import 'package:sesh/widgets/globals.dart' as globals;
+import 'package:intl/intl.dart';
 
 
 class Task {
@@ -269,7 +270,7 @@ class _TasksPageState extends State<TasksPage> {
                   color: const Color.fromARGB(255, 34, 34, 34),
                   alignment: Alignment.center,
                   child: const Text(
-                    '© Veronika Kalejová 2024',
+                    '© Veronika Kalejová 2025',
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
@@ -429,11 +430,11 @@ class _TasksPageState extends State<TasksPage> {
     return shouldDelete ?? false;
   }
 
-  void _showAddTaskDialog() {
+  void _showAddTaskDialog() async {
     TextEditingController taskNameController = TextEditingController();
     TextEditingController taskDescriptionController = TextEditingController();
     TextEditingController taskDeadlineController = TextEditingController();
-    TextEditingController taskProjectController = TextEditingController();  // New controller for project name
+    TextEditingController taskProjectController = TextEditingController();
     String assignedTo = globals.username;  // Assuming 'globals.username' holds the username of the logged-in user.
     String status = 'todo';  // Default status to 'To Do'
 
@@ -446,24 +447,28 @@ class _TasksPageState extends State<TasksPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Task name field
                 TextField(
                   controller: taskNameController,
                   decoration: const InputDecoration(
                     labelText: 'Task Name',
                   ),
                 ),
+                // Description field
                 TextField(
                   controller: taskDescriptionController,
                   decoration: const InputDecoration(
                     labelText: 'Description',
                   ),
                 ),
+                // Project name field
                 TextField(
                   controller: taskProjectController,
                   decoration: const InputDecoration(
                     labelText: 'Project Name',
                   ),
                 ),
+                // Deadline field
                 TextField(
                   controller: taskDeadlineController,
                   decoration: const InputDecoration(
@@ -483,36 +488,49 @@ class _TasksPageState extends State<TasksPage> {
             ),
             TextButton(
               onPressed: () async {
-                // Add the task to the backend (server)
-                final response = await http.post(
-                  Uri.parse('http://localhost:3000/tasks/add-task'),
-                  headers: <String, String>{
-                    'Content-Type': 'application/json',
-                  },
-                  body: json.encode({
-                    'task_name': taskNameController.text,
-                    'description': taskDescriptionController.text,
-                    'status': status,  // Default status 'todo'
-                    'project_name': taskProjectController.text,  // Project name from input field
-                    'userName': assignedTo,  // Sending logged-in user's username
-                  }),
-                );
+                // Parse and format the deadline entered by the user
+                String deadline = taskDeadlineController.text;
+                try {
+                  DateTime parsedDeadline = DateFormat('yyyy-MM-dd').parse(deadline);
+                  String formattedDeadline = DateFormat('yyyy-MM-dd HH:mm:ss').format(parsedDeadline);
+                  
+                  // Add the task to the backend (server)
+                  final response = await http.post(
+                    Uri.parse('http://localhost:3000/tasks/add-task'),
+                    headers: <String, String>{
+                      'Content-Type': 'application/json',
+                    },
+                    body: json.encode({
+                      'task_name': taskNameController.text,
+                      'description': taskDescriptionController.text,
+                      'status': status,  // Default status 'todo'
+                      'project_name': taskProjectController.text,  // Project name from input field
+                      'userName': assignedTo,  // Sending logged-in user's username
+                      'deadline': formattedDeadline,  // Sending formatted deadline
+                    }),
+                  );
 
-                if (response.statusCode == 201) {
-                  // If the task was successfully added, update the UI
-                  setState(() {
-                    toDoTasks.add(Task(
-                      name: taskNameController.text,
-                      tag: taskProjectController.text,  // Using project name as the 'tag'
-                      status: status,
+                  if (response.statusCode == 201) {
+                    // If the task was successfully added, update the UI
+                    setState(() {
+                      toDoTasks.add(Task(
+                        name: taskNameController.text,
+                        status: status,
+                        tag: taskDescriptionController.text,  // Using description as the 'tag'
+                      ));
+                    });
+                    Navigator.of(context).pop();  // Close the dialog
+                  } else {
+                    // If something went wrong, show an error message
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Failed to add task: ${json.decode(response.body)['error']}'),
                     ));
-                  });
-                  Navigator.of(context).pop();  // Close the dialog
-                } else {
-                  // If something went wrong, show an error message
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Failed to add task: ${json.decode(response.body)['error']}'),
-                  ));
+                  }
+                } catch (e) {
+                  // Handle invalid date format
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Invalid deadline format! Please use YYYY-MM-DD.')),
+                  );
                 }
               },
               child: const Text('Add'),
@@ -522,4 +540,5 @@ class _TasksPageState extends State<TasksPage> {
       },
     );
   }
+
 }
