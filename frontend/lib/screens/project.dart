@@ -41,7 +41,7 @@ class _ProjectPageState extends State<ProjectPage> {
       "transports": ["websocket"],
       "autoConnect": false,
     });
-    if (socket.connected) return; // Zabráni duplicite spojení
+    if (socket.connected) return; 
 
     socket = IO.io("http://localhost:3000", <String, dynamic>{
       "transports": ["websocket"],
@@ -135,10 +135,10 @@ class _ProjectPageState extends State<ProjectPage> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print("Project Data: $data");  // Debugging line
-      return data['name']; // Return project name
+      print("Project Data: $data");  
+      return data['name']; 
     } else {
-      return ''; // Return empty string if fetch fails
+      return ''; 
     }
   }
 
@@ -158,7 +158,7 @@ class _ProjectPageState extends State<ProjectPage> {
       if (response.statusCode == 200) {
         List<dynamic> data = jsonDecode(response.body);
 
-        if (!mounted) return; // Skontrolujeme, či je widget stále nažive
+        if (!mounted) return; 
 
         setState(() {
           tasks = data.map((task) => {
@@ -189,15 +189,14 @@ class _ProjectPageState extends State<ProjectPage> {
           'Content-Type': 'application/json',
         },
         body: json.encode({
-          'taskName': taskName,  // Poslanie názvu úlohy (backend vyhľadá ID)
-          'newStatus': newStatus, // Poslanie nového stavu
+          'taskName': taskName,  
+          'newStatus': newStatus,
         }),
       );
 
       if (response.statusCode == 200) {
         print('Task status updated successfully');
 
-        // Aktualizuj lokálny stav v UI po úspešnom update
         setState(() {
           for (var task in tasks) {
             if (task['task_name'] == taskName) {
@@ -226,7 +225,7 @@ class _ProjectPageState extends State<ProjectPage> {
       },
       body: jsonEncode({
         'text': text,
-        'uploadedBy': widget.userId.toString(), // Use userId instead of username
+        'uploadedBy': widget.userId.toString(), 
         'fileName': currentFileName,
       }),
     );
@@ -235,7 +234,7 @@ class _ProjectPageState extends State<ProjectPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Text input saved successfully')),
       );
-      _fetchProjectFiles(); // Refresh the file list
+      _fetchProjectFiles();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to save text input')),
@@ -257,7 +256,7 @@ class _ProjectPageState extends State<ProjectPage> {
         'fileName': fileName,
         'fileType': 'text/x-c',
         'fileData': text,
-        'uploadedBy': widget.userId.toString(), // Use userId instead of username
+        'uploadedBy': widget.userId.toString(), 
       }),
     );
 
@@ -265,7 +264,7 @@ class _ProjectPageState extends State<ProjectPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('File added successfully')),
       );
-      _fetchProjectFiles(); // Refresh the file list
+      _fetchProjectFiles(); 
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to add file')),
@@ -350,15 +349,15 @@ class _ProjectPageState extends State<ProjectPage> {
         automaticallyImplyLeading: true,
         backgroundColor: Colors.white,
         title: FutureBuilder<String>(
-        future: _fetchProjectName(), // Call the async method here
+        future: _fetchProjectName(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();  // Display a loading indicator while waiting
+            return const CircularProgressIndicator();  
           } else if (snapshot.hasError) {
             return const Text("Error loading project");
           } else if (snapshot.hasData) {
             return Text(
-              snapshot.data!,  // Display the project name
+              snapshot.data!, 
               style: const TextStyle(color: Colors.black),
             );
           } else {
@@ -392,7 +391,6 @@ class _ProjectPageState extends State<ProjectPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Add File and Save File buttons next to each other
                 Row(
                   children: [
                     TextButton(
@@ -411,13 +409,11 @@ class _ProjectPageState extends State<ProjectPage> {
                     ),
                   ],
                 ),
-                
-                // Other buttons at the end
                 Row(
                   children: [
                     TextButton(
                       onPressed: () {
-                        // Compile and Run action
+
                       },
                       child: const Text(
                         'Compile and Run',
@@ -559,7 +555,7 @@ class _ProjectPageState extends State<ProjectPage> {
                                   },
                                 ),
                         ),
-                        const SizedBox(height: 8), // Medzera medzi zoznamom a tlačidlom
+                        const SizedBox(height: 8), 
                         ElevatedButton.icon(
                           icon: const Icon(Icons.add, color: Colors.white),
                           label: const Text("Add Task", style: TextStyle(color: Colors.white)),
@@ -630,7 +626,7 @@ class _ProjectPageState extends State<ProjectPage> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop(); 
               },
               child: const Text('Close'),
             ),
@@ -640,7 +636,6 @@ class _ProjectPageState extends State<ProjectPage> {
     );
   }
 
-  // Pomocná funkcia na formátovanie riadkov s tučným názvom a bežnou hodnotou
   Widget _buildDetailText(String label, String value) {
     return RichText(
       text: TextSpan(
@@ -697,7 +692,7 @@ class _ProjectPageState extends State<ProjectPage> {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  width: double.infinity, // Aby sa roztiahol na šírku dialógu
+                  width: double.infinity, 
                   child: DropdownButtonFormField<String>(
                     value: selectedUser,
                     decoration: const InputDecoration(
@@ -746,7 +741,7 @@ class _ProjectPageState extends State<ProjectPage> {
                     'description': taskDescriptionController.text,
                     'status': status,
                     'project_name': projectName,
-                    'userName': selectedUser, // Priradený používateľ
+                    'userName': selectedUser, 
                   }),
                 );
 
@@ -769,14 +764,12 @@ class _ProjectPageState extends State<ProjectPage> {
 
   
   Future<List<String>> fetchPrivilegedUsers() async {
-    // Získame názov projektu pomocou funkcie _fetchProjectName
     String projectName = await _fetchProjectName();
 
     if (projectName.isEmpty) {
       throw Exception('Project name not found');
     }
 
-    // Získame zoznam používateľov s prístupom k projektu
     final response = await http.get(
       Uri.parse('http://localhost:3000/project/users-with-access?project_name=$projectName'),
       headers: {

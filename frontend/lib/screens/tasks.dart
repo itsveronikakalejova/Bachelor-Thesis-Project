@@ -44,7 +44,7 @@ class _TasksPageState extends State<TasksPage> {
   List<Task> doingTasks = [];
   List<Task> doneTasks = [];
 
-  bool _isLoading = true; // Add a loading state
+  bool _isLoading = true; 
   List<String> users = [];
   String selectedPerson = "";
 
@@ -59,26 +59,26 @@ class _TasksPageState extends State<TasksPage> {
 
   Future<void> fetchTasks() async {
     setState(() {
-      _isLoading = true; // Set loading to true while fetching
+      _isLoading = true; 
     });
 
     try {
       final response = await http.get(Uri.parse('http://localhost:3000/tasks/my-tasks/?userName=${globals.username}'));
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
-        print('Fetched data: $data'); // Log the data to check its structure
+        print('Fetched data: $data'); 
         setState(() {
           toDoTasks = data.where((task) => task['status'] == 'todo').map((task) => Task.fromJson(task)).toList();
           doingTasks = data.where((task) => task['status'] == 'doing').map((task) => Task.fromJson(task)).toList(); 
           doneTasks = data.where((task) => task['status'] == 'done').map((task) => Task.fromJson(task)).toList();
-          _isLoading = false; // Set loading to false once data is fetched
+          _isLoading = false; 
         });
       } else {
         throw Exception('Failed to load tasks');
       }
     } catch (error) {
       setState(() {
-        _isLoading = false; // Set loading to false in case of an error
+        _isLoading = false; 
       });
       print(error);
     }
@@ -91,9 +91,9 @@ class _TasksPageState extends State<TasksPage> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['name']; // Return project name
+      return data['name']; 
     } else {
-      return ''; // Return empty string if fetch fails
+      return ''; 
     }
   }
 
@@ -108,12 +108,11 @@ class _TasksPageState extends State<TasksPage> {
             'Content-Type': 'application/json',
           },
           body: json.encode({
-            'taskName': task.name,  // Odoslanie názvu úlohy na odstránenie
+            'taskName': task.name, 
           }),
         );
 
         if (response.statusCode == 200) {
-          // Úspešne odstránené z databázy, aktualizujeme UI
           setState(() {
             if (column == 'To Do') {
               toDoTasks.remove(task);
@@ -136,7 +135,6 @@ class _TasksPageState extends State<TasksPage> {
 
   Future<void> moveTask(Task task, String fromColumn, String toColumn) async {
     setState(() {
-      // Remove the task from the current column
       if (fromColumn == 'To Do') {
         toDoTasks.remove(task);
       } else if (fromColumn == 'Doing') {
@@ -145,7 +143,6 @@ class _TasksPageState extends State<TasksPage> {
         doneTasks.remove(task);
       }
 
-      // Add the task to the new column
       if (toColumn == 'To Do') {
         toDoTasks.add(task);
       } else if (toColumn == 'Doing') {
@@ -164,7 +161,6 @@ class _TasksPageState extends State<TasksPage> {
       dbStatus = 'done';
     }
 
-    // Send a PUT request to update the task status in the database
     try {
       final response = await http.put(
         Uri.parse('http://localhost:3000/tasks/update-status'),
@@ -172,16 +168,14 @@ class _TasksPageState extends State<TasksPage> {
           'Content-Type': 'application/json',
         },
         body: json.encode({
-          'taskName': task.name,  // Send the task name
-          'newStatus': dbStatus,  // Send the new status (toColumn)
+          'taskName': task.name, 
+          'newStatus': dbStatus,  
         }),
       );
 
       if (response.statusCode == 200) {
-        // Success
         print('Task status updated successfully');
       } else {
-        // Handle error
         print('Failed to update task status: ${json.decode(response.body)['error']}');
       }
     } catch (error) {
@@ -197,7 +191,7 @@ class _TasksPageState extends State<TasksPage> {
       backgroundColor: Colors.white,
       drawer: SideBar(
         onProjectsTap: () {
-          Navigator.pop(context); // Zavrie Drawer
+          Navigator.pop(context);
           Future.delayed(const Duration(milliseconds: 300), () {
             Navigator.pushNamed(context, '/projects');
           });
@@ -232,8 +226,8 @@ class _TasksPageState extends State<TasksPage> {
           },
         ),
       ),
-      body: _isLoading  // Show the loading indicator when the tasks are being fetched
-          ? Center(child: CircularProgressIndicator())  // Show loading indicator
+      body: _isLoading  
+          ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 Expanded(
@@ -299,7 +293,7 @@ class _TasksPageState extends State<TasksPage> {
             Expanded(
               child: ListView(
                 children: tasks.isEmpty
-                    ? [Text('No tasks!')] // Display a message when no tasks are available
+                    ? [Text('No tasks!')] 
                     : tasks.map((task) {
                         return _buildTaskCard(task, columnTitle);
                       }).toList(),
@@ -325,7 +319,6 @@ class _TasksPageState extends State<TasksPage> {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Display task name and project name in parentheses
               FutureBuilder<String>(
                 future: fetchProjectName(task.projectId),
                 builder: (context, snapshot) {
@@ -341,15 +334,14 @@ class _TasksPageState extends State<TasksPage> {
                     );
                   } else {
                     return Text(
-                      '(${snapshot.data})', // Display project name in parentheses
+                      '(${snapshot.data})',
                       style: const TextStyle(fontSize: 16, color: myBlack),
                     );
                   }
                 },
               ),
-              // Display the task's tag (description)
               Text(
-                task.tag,  // Show tag/description
+                task.tag, 
                 style: const TextStyle(fontSize: 20, color: Colors.grey),
               ),
             ],
@@ -435,8 +427,8 @@ class _TasksPageState extends State<TasksPage> {
     TextEditingController taskDescriptionController = TextEditingController();
     TextEditingController taskDeadlineController = TextEditingController();
     TextEditingController taskProjectController = TextEditingController();
-    String assignedTo = globals.username;  // Assuming 'globals.username' holds the username of the logged-in user.
-    String status = 'todo';  // Default status to 'To Do'
+    String assignedTo = globals.username; 
+    String status = 'todo';  
 
     showDialog(
       context: context,
@@ -447,28 +439,24 @@ class _TasksPageState extends State<TasksPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Task name field
                 TextField(
                   controller: taskNameController,
                   decoration: const InputDecoration(
                     labelText: 'Task Name',
                   ),
                 ),
-                // Description field
                 TextField(
                   controller: taskDescriptionController,
                   decoration: const InputDecoration(
                     labelText: 'Description',
                   ),
                 ),
-                // Project name field
                 TextField(
                   controller: taskProjectController,
                   decoration: const InputDecoration(
                     labelText: 'Project Name',
                   ),
                 ),
-                // Deadline field
                 TextField(
                   controller: taskDeadlineController,
                   decoration: const InputDecoration(
@@ -488,13 +476,11 @@ class _TasksPageState extends State<TasksPage> {
             ),
             TextButton(
               onPressed: () async {
-                // Parse and format the deadline entered by the user
                 String deadline = taskDeadlineController.text;
                 try {
                   DateTime parsedDeadline = DateFormat('yyyy-MM-dd').parse(deadline);
                   String formattedDeadline = DateFormat('yyyy-MM-dd HH:mm:ss').format(parsedDeadline);
-                  
-                  // Add the task to the backend (server)
+
                   final response = await http.post(
                     Uri.parse('http://localhost:3000/tasks/add-task'),
                     headers: <String, String>{
@@ -503,31 +489,28 @@ class _TasksPageState extends State<TasksPage> {
                     body: json.encode({
                       'task_name': taskNameController.text,
                       'description': taskDescriptionController.text,
-                      'status': status,  // Default status 'todo'
-                      'project_name': taskProjectController.text,  // Project name from input field
-                      'userName': assignedTo,  // Sending logged-in user's username
-                      'deadline': formattedDeadline,  // Sending formatted deadline
+                      'status': status,  
+                      'project_name': taskProjectController.text,  
+                      'userName': assignedTo,  
+                      'deadline': formattedDeadline,  
                     }),
                   );
 
                   if (response.statusCode == 201) {
-                    // If the task was successfully added, update the UI
                     setState(() {
                       toDoTasks.add(Task(
                         name: taskNameController.text,
                         status: status,
-                        tag: taskDescriptionController.text,  // Using description as the 'tag'
+                        tag: taskDescriptionController.text, 
                       ));
                     });
-                    Navigator.of(context).pop();  // Close the dialog
+                    Navigator.of(context).pop(); 
                   } else {
-                    // If something went wrong, show an error message
                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                       content: Text('Failed to add task: ${json.decode(response.body)['error']}'),
                     ));
                   }
                 } catch (e) {
-                  // Handle invalid date format
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Invalid deadline format! Please use YYYY-MM-DD.')),
                   );

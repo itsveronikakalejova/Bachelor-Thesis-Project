@@ -76,7 +76,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       print("Project: ${project.name}, Owner: $ownerName, Current User: ${globals.username}");
 
       setState(() {
-        project.isOwner = ownerName == globals.username; // Nastavujeme správne v projekte
+        project.isOwner = ownerName == globals.username;
       });
 
       print("Project: ${project.name}, isOwner: ${project.isOwner}");
@@ -277,8 +277,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
             if (value == 'delete') {
               deleteProject(project);
             } else if (value == 'share') {
-              // Call the sharedialog function with the project name and a default privilege
-              showShareDialog(context, project.name, 'read'); // 'read' can be adjusted to your needs
+              showShareDialog(context, project.name, 'read');
             }
           },
           itemBuilder: (BuildContext context) => [

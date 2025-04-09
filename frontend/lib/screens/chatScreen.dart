@@ -29,7 +29,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       drawer: SideBar(
         onProjectsTap: () {
-          Navigator.pop(context); // Zavrie Drawer
+          Navigator.pop(context);
           Future.delayed(const Duration(milliseconds: 300), () {
             Navigator.pushNamed(context, '/projects');
           });
