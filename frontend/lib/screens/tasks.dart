@@ -383,7 +383,7 @@ class _TasksPageState extends State<TasksPage> {
             children: [
               if (column == 'To Do')
                 IconButton(
-                  icon: const Icon(Icons.arrow_forward, color: Colors.blue),
+                  icon: const Icon(Icons.arrow_forward, color: Colors.orangeAccent),
                   onPressed: () {
                     moveTask(task, column, 'Doing');
                   },
@@ -392,13 +392,13 @@ class _TasksPageState extends State<TasksPage> {
                 Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.blue),
+                      icon: const Icon(Icons.arrow_back, color: Colors.orangeAccent),
                       onPressed: () {
                         moveTask(task, column, 'To Do');
                       },
                     ),
                     IconButton(
-                      icon: const Icon(Icons.arrow_forward, color: Colors.blue),
+                      icon: const Icon(Icons.arrow_forward, color: Colors.orangeAccent),
                       onPressed: () {
                         moveTask(task, column, 'Done');
                       },
@@ -407,16 +407,15 @@ class _TasksPageState extends State<TasksPage> {
                 ),
               if (column == 'Done')
                 IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.blue),
+                  icon: const Icon(Icons.arrow_back, color: Colors.orangeAccent),
                   onPressed: () {
                     moveTask(task, column, 'Doing');
                   },
                 ),
-              // Ikona pera pre editáciu úlohy
               IconButton(
-                icon: const Icon(Icons.edit, color: Colors.orange),
+                icon: const Icon(Icons.edit, color: Colors.blue),
                 onPressed: () {
-                  editTaskDialog(task); // Volanie funkcie na editáciu úlohy
+                  editTaskDialog(task); 
                 },
               ),
               IconButton(
@@ -436,7 +435,12 @@ class _TasksPageState extends State<TasksPage> {
   void editTaskDialog(Task task) async {
     TextEditingController taskNameController = TextEditingController(text: task.name);
     TextEditingController taskTagController = TextEditingController(text: task.tag);
-    TextEditingController deadlineController = TextEditingController(text: task.deadline);
+    TextEditingController deadlineController = TextEditingController(
+    text: task.deadline != null
+        ? DateTime.tryParse(task.deadline)?.toLocal().toString().split(' ')[0] ?? ''
+        : '',
+  );
+
 
     // Získanie názvu projektu podľa ID
     String initialProjectName = await fetchProjectName(task.projectId);
@@ -463,6 +467,7 @@ class _TasksPageState extends State<TasksPage> {
                   TextField(
                     controller: deadlineController,
                     decoration: const InputDecoration(labelText: 'Deadline (yyyy-mm-dd)'),
+                    keyboardType: TextInputType.datetime,
                   ),
                   const SizedBox(height: 8),
                   FutureBuilder<List<String>>(

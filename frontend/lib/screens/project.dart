@@ -922,6 +922,7 @@ class _ProjectPageState extends State<ProjectPage> {
                     'status': status,
                     'project_name': projectName,
                     'userName': selectedUser, 
+                    'deadline': taskDeadlineController.text,
                   }),
                 );
 
