@@ -258,7 +258,6 @@ router.get('/project/users-with-access', (req, res) => {
   });
   
 
-// Route pre získanie projektov podľa používateľa
 router.get('/project/list-my-projects', (req, res) => {
     const { username } = req.query;
   
@@ -266,7 +265,6 @@ router.get('/project/list-my-projects', (req, res) => {
       return res.status(400).json({ error: 'Username is required' });
     }
   
-    // Dotaz do databázy pre získanie projektov používateľa bez duplicit
     const query = `
       SELECT DISTINCT p.name 
       FROM projects p
@@ -284,7 +282,6 @@ router.get('/project/list-my-projects', (req, res) => {
         return res.status(404).json({ message: 'No projects found for this user' });
       }
   
-      // Posielame výsledok ako JSON
       res.json(results);
     });
   });

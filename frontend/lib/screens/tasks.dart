@@ -228,12 +228,12 @@ class _TasksPageState extends State<TasksPage> {
             Navigator.pushNamed(context, '/projects');
           });
         },
-        onChatsTap: () {
-          Navigator.pop(context);
-          Future.delayed(const Duration(milliseconds: 300), () {
-            Navigator.pushNamed(context, '/chats');
-          });
-        },
+        // onChatsTap: () {
+        //   Navigator.pop(context);
+        //   Future.delayed(const Duration(milliseconds: 300), () {
+        //     Navigator.pushNamed(context, '/chats');
+        //   });
+        // },
         onTasksTap: () {
           Navigator.pop(context);
           Future.delayed(const Duration(milliseconds: 300), () {
@@ -436,6 +436,7 @@ class _TasksPageState extends State<TasksPage> {
     TextEditingController taskNameController = TextEditingController(text: task.name);
     TextEditingController taskTagController = TextEditingController(text: task.tag);
     TextEditingController deadlineController = TextEditingController(
+    // ignore: unnecessary_null_comparison
     text: task.deadline != null
         ? DateTime.tryParse(task.deadline)?.toLocal().toString().split(' ')[0] ?? ''
         : '',
@@ -447,6 +448,7 @@ class _TasksPageState extends State<TasksPage> {
     String? selectedProject = initialProjectName;
 
     showDialog(
+      // ignore: use_build_context_synchronously
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(builder: (context, setState) {

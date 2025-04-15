@@ -106,12 +106,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             Navigator.pushNamed(context, '/projects');
           });
         },
-        onChatsTap: () {
-          Navigator.pop(context);
-          Future.delayed(const Duration(milliseconds: 300), () {
-            Navigator.pushNamed(context, '/chats');
-          });
-        },
+        // onChatsTap: () {
+        //   Navigator.pop(context);
+        //   Future.delayed(const Duration(milliseconds: 300), () {
+        //     Navigator.pushNamed(context, '/chats');
+        //   });
+        // },
         onTasksTap: () {
           Navigator.pop(context);
           Future.delayed(const Duration(milliseconds: 300), () {

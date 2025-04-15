@@ -174,12 +174,12 @@ class _ProjectsPageState extends State<ProjectsPage> {
             Navigator.pushNamed(context, '/projects');
           });
         },
-        onChatsTap: () {
-          Navigator.pop(context);
-          Future.delayed(const Duration(milliseconds: 300), () {
-            Navigator.pushNamed(context, '/chats');
-          });
-        },
+        // onChatsTap: () {
+        //   Navigator.pop(context);
+        //   Future.delayed(const Duration(milliseconds: 300), () {
+        //     Navigator.pushNamed(context, '/chats');
+        //   });
+        // },
         onTasksTap: () {
           Navigator.pop(context);
           Future.delayed(const Duration(milliseconds: 300), () {

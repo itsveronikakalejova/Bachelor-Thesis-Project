@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart';
 import 'package:sesh/screens/groupChatScreen.dart';
 import 'package:sesh/widgets/colors.dart';
 import 'package:sesh/widgets/sideBar.dart';
-import 'package:sesh/widgets/project_model.dart';
+// import 'package:sesh/widgets/project_model.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:sesh/widgets/shareDialog.dart';
 import 'package:http/http.dart' as http;
@@ -23,6 +23,7 @@ class ProjectPage extends StatefulWidget {
 
 class _ProjectPageState extends State<ProjectPage> {
   late IO.Socket socket;
+  int? activeFileId;
   final TextEditingController _contentController = TextEditingController();
   List<Map<String, dynamic>> tasks = []; 
   bool isLoading = false;
@@ -32,58 +33,108 @@ class _ProjectPageState extends State<ProjectPage> {
   @override
   void initState() {
     super.initState();
-    _connectToSocket();
+    // Inicializácia socketu
+    socket = IO.io("http://localhost:3000", <String, dynamic>{
+      "transports": ["websocket"],
+      "autoConnect": false,
+    });
+    socket.connect();
+    
+    // Ostatné inicializácie
     _fetchProjectFiles();
     _fetchTasks(); 
   }
 
-  void _connectToSocket() {
-    socket = IO.io("http://localhost:3000", <String, dynamic>{
-      "transports": ["websocket"],
-      "autoConnect": false,
-    });
-    if (socket.connected) return; 
+  // void _connectToSocket() {
+  //   socket = IO.io("http://localhost:3000", <String, dynamic>{
+  //     "transports": ["websocket"],
+  //     "autoConnect": false,
+  //   });
+  //   if (socket.connected) return; 
 
-    socket = IO.io("http://localhost:3000", <String, dynamic>{
-      "transports": ["websocket"],
-      "autoConnect": false,
-    });
+  //   socket = IO.io("http://localhost:3000", <String, dynamic>{
+  //     "transports": ["websocket"],
+  //     "autoConnect": false,
+  //   });
 
-    socket.connect();
+  //   socket.connect();
 
-    socket.onConnect((_) {
-      print("Connected to socket");
-      socket.emit("join-document", widget.projectId);
-    });
+  //   socket.onConnect((_) {
+  //     print("Connected to socket");
+  //     socket.emit("join-document", widget.projectId);
+  //   });
 
-    socket.on("load-document", (data) {
-      if (mounted) {
+  //   socket.on("load-document", (data) {
+  //     if (mounted) {
+  //       setState(() {
+  //         _contentController.text = data;
+  //       });
+  //     }
+  //   });
+
+  //   socket.on("update-document", (content) {
+  //     if (mounted) {
+  //       setState(() {
+  //         _contentController.text = content;
+  //       });
+  //     }
+  //   });
+
+  //   socket.onDisconnect((_) {
+  //     print("Socket disconnected");
+  //   });
+
+  //   socket.onError((error) {
+  //     print("Socket error: $error");
+  //   });
+  // }
+
+  void _connectToSocketForFile(int fileId) {
+    if (activeFileId != null) {
+      socket.emit('close-file', activeFileId);
+    }
+
+    activeFileId = fileId;
+    socket.emit('open-file', fileId);
+
+    socket.on('file-changed', (data) {
+      if (mounted && data['fileId'] == activeFileId) {
         setState(() {
-          _contentController.text = data;
+          _contentController.text = data['content'];
         });
       }
-    });
-
-    socket.on("update-document", (content) {
-      if (mounted) {
-        setState(() {
-          _contentController.text = content;
-        });
-      }
-    });
-
-    socket.onDisconnect((_) {
-      print("Socket disconnected");
-    });
-
-    socket.onError((error) {
-      print("Socket error: $error");
     });
   }
 
+  Future<void> _fetchFileContent(int fileId, String fileName) async {
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/projects/${widget.projectId}/files/$fileId'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        _contentController.text = data['fileData'];
+        currentFileName = fileName;
+      });
+      _connectToSocketForFile(fileId);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to fetch file content')),
+      );
+    }
+  }
 
   void _sendTextUpdate(String text) {
-    socket.emit("update-document", {"docId": widget.projectId, "content": text});
+    if (activeFileId != null) {
+      socket.emit('file-update', {
+        'fileId': activeFileId,
+        'content': text
+      });
+    }
   }
 
   Future<void> _fetchProjectFiles() async {
@@ -105,26 +156,26 @@ class _ProjectPageState extends State<ProjectPage> {
     }
   }
 
-  Future<void> _fetchFileContent(int fileId, String fileName) async {
-    final response = await http.get(
-      Uri.parse('http://localhost:3000/projects/${widget.projectId}/files/$fileId'),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-      },
-    );
+  // Future<void> _fetchFileContent(int fileId, String fileName) async {
+  //   final response = await http.get(
+  //     Uri.parse('http://localhost:3000/projects/${widget.projectId}/files/$fileId'),
+  //     headers: {
+  //       'Authorization': 'Bearer ${widget.token}',
+  //     },
+  //   );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      setState(() {
-        _contentController.text = data['fileData'];
-        currentFileName = fileName;
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch file content')),
-      );
-    }
-  }
+  //   if (response.statusCode == 200) {
+  //     final data = jsonDecode(response.body);
+  //     setState(() {
+  //       _contentController.text = data['fileData'];
+  //       currentFileName = fileName;
+  //     });
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Failed to fetch file content')),
+  //     );
+  //   }
+  // }
 
   Future<String> _fetchProjectName() async {
     final response = await http.get(
@@ -316,6 +367,9 @@ class _ProjectPageState extends State<ProjectPage> {
 
   @override
   void dispose() {
+    if (activeFileId != null) {
+      socket.emit('close-file', activeFileId);
+    }
     _contentController.dispose();
     if (socket.connected) {
       socket.disconnect();
@@ -341,7 +395,7 @@ class _ProjectPageState extends State<ProjectPage> {
       backgroundColor: const Color.fromARGB(255, 34, 34, 34),
       drawer: SideBar(
         onProjectsTap: () => cleanupAndNavigate('/projects'),
-        onChatsTap: () => cleanupAndNavigate('/chats'),
+        // onChatsTap: () => cleanupAndNavigate('/chats'),
         onTasksTap: () => cleanupAndNavigate('/tasks'),
       ),
 

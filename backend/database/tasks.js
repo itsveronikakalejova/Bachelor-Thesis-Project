@@ -286,7 +286,6 @@ router.put('/update-task-in-tasks', async (req, res) => {
   }
 
   try {
-    // Najprv získa ID projektu podľa názvu
     const getProjectIdQuery = 'SELECT id FROM projects WHERE name = ?';
     db.query(getProjectIdQuery, [project_name], (err, projectResult) => {
       if (err) {
@@ -299,7 +298,6 @@ router.put('/update-task-in-tasks', async (req, res) => {
 
       const projectId = projectResult[0].id;
 
-      // Potom aktualizuje údaje úlohy vrátane project_id
       const updateQuery = `
         UPDATE tasks 
         SET project_id = ?, task_name = ?, description = ?, deadline = ?

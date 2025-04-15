@@ -2,6 +2,8 @@ const { Server } = require("socket.io");
 
 let documents = {}; 
 
+const activeFiles = new Map();
+
 function initializeSocket(server) {
     const io = new Server(server, {
         cors: {
@@ -9,29 +11,26 @@ function initializeSocket(server) {
             methods: ["GET", "POST"]
         }
     });
-
-    io.on("connection", (socket) => {
-        console.log("Pripojeny pouzivatel:", socket.id);
-
-        socket.on("join-document", (docId) => {
-            socket.join(docId);
-            if (!documents[docId]) {
-                documents[docId] = { content: "" };
-            }
-            socket.emit("load-document", documents[docId].content);
+    io.on('connection', (socket) => {
+        socket.on('open-file', (fileId) => {
+          if (!activeFiles.has(fileId)) {
+            activeFiles.set(fileId, new Set());
+          }
+          activeFiles.get(fileId).add(socket.id);
+          socket.join(`file-${fileId}`); 
         });
-
-        socket.on("update-document", ({ docId, content }) => {
-            if (documents[docId]) {
-                documents[docId].content = content;
-                socket.to(docId).emit("update-document", content);
-            }
+      
+        socket.on('close-file', (fileId) => {
+          if (activeFiles.has(fileId)) {
+            activeFiles.get(fileId).delete(socket.id);
+          }
+          socket.leave(`file-${fileId}`);
         });
-
-        socket.on("disconnect", () => {
-            console.log("Odpojeny pouzivatel:", socket.id);
+      
+        socket.on('file-update', ({ fileId, content }) => {
+          socket.to(`file-${fileId}`).emit('file-changed', { fileId, content });
         });
-    });
+      });
 }
 
 module.exports = { initializeSocket };
