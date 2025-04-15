@@ -101,14 +101,13 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
     if (response.statusCode == 201) {
       final newProject = Project.fromJson(json.decode(response.body));
+      newProject.isOwner = true;
+
       setState(() {
         projects.add(newProject);
       });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to add project')),
-      );
     }
+
   }
 
   Future<void> deleteProject(Project project) async {

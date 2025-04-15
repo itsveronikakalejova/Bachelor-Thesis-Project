@@ -52,16 +52,16 @@ class SideBar extends StatelessWidget {
               Navigator.pushNamed(context, '/projects');
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.chat, color: Colors.white),
-            title: const Text(
-              'Chats',
-              style: TextStyle(color: Colors.white),
-            ),
-            onTap: () {
-              Navigator.pushNamed(context, '/chats');
-            },
-          ),
+          // ListTile(
+          //   leading: const Icon(Icons.chat, color: Colors.white),
+          //   title: const Text(
+          //     'Chats',
+          //     style: TextStyle(color: Colors.white),
+          //   ),
+          //   onTap: () {
+          //     Navigator.pushNamed(context, '/chats');
+          //   },
+          // ),
           ListTile(
             leading: const Icon(Icons.check_circle, color: Colors.white),
             title: const Text(

@@ -235,5 +235,93 @@ router.get('/project-id', (req, res) => {
   });
 });
 
+router.put('/update-task-in-project', async (req, res) => {
+  const { originalName, updatedName, description, deadline, assigned_to } = req.body;
+
+  if (!originalName || !updatedName || !description || !deadline || !assigned_to) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    const getUserIdQuery = 'SELECT id FROM users WHERE username = ?';
+    db.query(getUserIdQuery, [assigned_to], (err, userResult) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error fetching user ID' });
+      }
+
+      if (userResult.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const userId = userResult[0].id;
+
+      const updateQuery = `
+        UPDATE tasks 
+        SET task_name = ?, description = ?, deadline = ?, assigned_to = ?
+        WHERE task_name = ?
+      `;
+
+      db.query(updateQuery, [updatedName, description, deadline, userId, originalName], (err, result) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error updating task' });
+        }
+
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ error: 'Task not found or not updated' });
+        }
+
+        res.status(200).json({ message: 'Task updated successfully' });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.put('/update-task-in-tasks', async (req, res) => {
+  const { originalName, updatedName, description, deadline, project_name } = req.body;
+
+  if (!originalName || !updatedName || !description || !deadline || !project_name) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    // Najprv získa ID projektu podľa názvu
+    const getProjectIdQuery = 'SELECT id FROM projects WHERE name = ?';
+    db.query(getProjectIdQuery, [project_name], (err, projectResult) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error fetching project ID' });
+      }
+
+      if (projectResult.length === 0) {
+        return res.status(404).json({ error: 'Project not found' });
+      }
+
+      const projectId = projectResult[0].id;
+
+      // Potom aktualizuje údaje úlohy vrátane project_id
+      const updateQuery = `
+        UPDATE tasks 
+        SET project_id = ?, task_name = ?, description = ?, deadline = ?
+        WHERE task_name = ?
+      `;
+
+      db.query(updateQuery, [projectId, updatedName, description, deadline, originalName], (err, result) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error updating task' });
+        }
+
+        if (result.affectedRows === 0) {
+          return res.status(404).json({ error: 'Task not found or not updated' });
+        }
+
+        res.status(200).json({ message: 'Task updated successfully' });
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 module.exports = router;

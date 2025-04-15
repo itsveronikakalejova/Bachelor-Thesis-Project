@@ -8,27 +8,29 @@ import 'package:intl/intl.dart';
 
 class Task {
   final String name;
-  final String status;
   final String tag;
-  final int? projectId; 
+  final int? projectId;
+  final String deadline;  
+  final String status;
 
   Task({
     required this.name,
-    required this.status,
     required this.tag,
     required this.projectId,
+    required this.deadline,  
+    required this.status,
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
       name: json['task_name'],
+      tag: json['description'], 
+      projectId: json['project_id'],
+      deadline: json['deadline'],
       status: json['status'],
-      tag: json['description'],
-      projectId: json['project_id'], 
     );
   }
 }
-
 
 
 class TasksPage extends StatefulWidget {
@@ -410,6 +412,13 @@ class _TasksPageState extends State<TasksPage> {
                     moveTask(task, column, 'Doing');
                   },
                 ),
+              // Ikona pera pre editáciu úlohy
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.orange),
+                onPressed: () {
+                  editTaskDialog(task); // Volanie funkcie na editáciu úlohy
+                },
+              ),
               IconButton(
                 icon: const Icon(Icons.close, color: Colors.red),
                 onPressed: () {
@@ -423,6 +432,130 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
+
+  void editTaskDialog(Task task) async {
+    TextEditingController taskNameController = TextEditingController(text: task.name);
+    TextEditingController taskTagController = TextEditingController(text: task.tag);
+    TextEditingController deadlineController = TextEditingController(text: task.deadline);
+
+    // Získanie názvu projektu podľa ID
+    String initialProjectName = await fetchProjectName(task.projectId);
+    String? selectedProject = initialProjectName;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Edit Task'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: taskNameController,
+                    decoration: const InputDecoration(labelText: 'Task Name'),
+                  ),
+                  TextField(
+                    controller: taskTagController,
+                    decoration: const InputDecoration(labelText: 'Tag (Description)'),
+                  ),
+                  TextField(
+                    controller: deadlineController,
+                    decoration: const InputDecoration(labelText: 'Deadline (yyyy-mm-dd)'),
+                  ),
+                  const SizedBox(height: 8),
+                  FutureBuilder<List<String>>(
+                    future: fetchProjectList(globals.username),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      } else if (snapshot.hasError || !snapshot.hasData) {
+                        return const Text('Error loading projects');
+                      } else {
+                        return DropdownButtonFormField<String>(
+                          value: selectedProject,
+                          decoration: const InputDecoration(labelText: 'Select Project'),
+                          items: snapshot.data!.map((projectName) {
+                            return DropdownMenuItem<String>(
+                              value: projectName,
+                              child: Text(projectName),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedProject = newValue;
+                            });
+                          },
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  if (taskNameController.text.isEmpty ||
+                      taskTagController.text.isEmpty ||
+                      deadlineController.text.isEmpty ||
+                      selectedProject == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please complete all fields.')),
+                    );
+                    return;
+                  }
+                  final response = await http.put(
+                    Uri.parse('http://localhost:3000/tasks/update-task-in-tasks'),
+                    headers: <String, String>{'Content-Type': 'application/json'},
+                    body: json.encode({
+                      'originalName': task.name,
+                      'updatedName': taskNameController.text,
+                      'description': taskTagController.text,
+                      'deadline': deadlineController.text,
+                      'project_name': selectedProject,
+                    }),
+                  );
+
+                  if (response.statusCode == 200) {
+                    Navigator.of(context).pop();
+                    fetchTasks();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Task updated successfully!')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text('Failed to update task: ${json.decode(response.body)['error']}'),
+                    ));
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+
+
+  Future<List<String>> fetchProjectList(String username) async {
+    final response = await http.get(Uri.parse('http://localhost:3000/project/list-my-projects?username=$username'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      List<String> projectList = data.map((project) => project['name'] as String).toList();
+      return projectList;
+    } else {
+      throw Exception('Failed to load projects');
+    }
+  }
 
   Future<bool> _showDeleteTaskDialog(Task task, String column) async {
     bool? shouldDelete = await showDialog<bool>(
@@ -541,7 +674,8 @@ class _TasksPageState extends State<TasksPage> {
                         name: taskNameController.text,
                         status: status,
                         tag: taskDescriptionController.text,
-                        projectId: projectId,  
+                        projectId: projectId, 
+                        deadline: formattedDeadline,  
                       ));
                     });
                     Navigator.of(context).pop(); 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:sesh/screens/groupChatScreen.dart';
 import 'package:sesh/widgets/colors.dart';
 import 'package:sesh/widgets/sideBar.dart';
@@ -500,76 +501,8 @@ class _ProjectPageState extends State<ProjectPage> {
                 ),
                 Expanded(
                   flex: 2,
-                  child: Container(
-                    color: myGreen,
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
-                          "Tasks",
-                          style: TextStyle(fontSize: 20, color: Colors.black),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: tasks.isEmpty
-                              ? const Center(child: Text("No tasks!", style: TextStyle(color: Colors.black)))
-                              : ListView.builder(
-                                  itemCount: tasks.length,
-                                  itemBuilder: (context, index) {
-                                    bool isDone = tasks[index]['status'] == 'done';
-
-                                    return Card(
-                                      color: Colors.white,
-                                      margin: const EdgeInsets.symmetric(vertical: 4),
-                                      child: ListTile(
-                                        leading: Checkbox(
-                                          value: isDone,
-                                          onChanged: (bool? newValue) {
-                                            if (newValue != null) {
-                                              updateTaskStatus(tasks[index]['task_name'], newValue);
-                                            }
-                                          },
-                                        ),
-                                        title: GestureDetector(
-                                          onTap: () {
-                                            showTaskDetailsDialog(tasks[index]);
-                                          },
-                                          child: Text(
-                                            tasks[index]['task_name'],
-                                            style: const TextStyle(color: Colors.black),
-                                          ),
-                                        ),
-                                        subtitle: GestureDetector(
-                                          onTap: () {
-                                            showTaskDetailsDialog(tasks[index]);
-                                          },
-                                          child: Text(
-                                            tasks[index]['assigned_to'],
-                                            style: const TextStyle(color: Color.fromARGB(255, 19, 102, 76)),
-                                          ),
-                                        ),
-                                      ),
-
-                                    );
-                                  },
-                                ),
-                        ),
-                        const SizedBox(height: 8), 
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.add, color: Colors.white),
-                          label: const Text("Add Task", style: TextStyle(color: Colors.white)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          ),
-                          onPressed: _showAddTaskDialog,
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: _buildTaskPanel(),
                 ),
-
               ],
             ),
           ),
@@ -586,6 +519,253 @@ class _ProjectPageState extends State<ProjectPage> {
       ),
     );
   }
+
+  Widget _buildTaskPanel() {
+    return Container(
+      color: myGreen,
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Text(
+            "Tasks",
+            style: TextStyle(fontSize: 20, color: Colors.black),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: tasks.isEmpty
+                ? const Center(
+                    child: Text("No tasks!", style: TextStyle(color: Colors.black)),
+                  )
+                : ListView.builder(
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) {
+                      bool isDone = tasks[index]['status'] == 'done';
+
+                      return Card(
+                        color: Colors.white,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        child: ListTile(
+                          leading: Checkbox(
+                            value: isDone,
+                            onChanged: (bool? newValue) {
+                              if (newValue != null) {
+                                updateTaskStatus(tasks[index]['task_name'], newValue);
+                              }
+                            },
+                          ),
+                          title: GestureDetector(
+                            onTap: () {
+                              showTaskDetailsDialog(tasks[index]);
+                            },
+                            child: Text(
+                              tasks[index]['task_name'],
+                              style: const TextStyle(color: Colors.black),
+                            ),
+                          ),
+                          subtitle: GestureDetector(
+                            onTap: () {
+                              showTaskDetailsDialog(tasks[index]);
+                            },
+                            child: Text(
+                              tasks[index]['assigned_to'],
+                              style: const TextStyle(color: Color.fromARGB(255, 19, 102, 76)),
+                            ),
+                          ),
+                          trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () {
+                                  editTaskDialog(tasks[index]);
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.red),
+                                onPressed: () {
+                                  deleteTask(tasks[index]);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text("Add Task", style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            onPressed: _showAddTaskDialog,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void editTaskDialog(Map<String, dynamic> task) async {
+    TextEditingController nameController = TextEditingController(text: task['task_name']);
+    TextEditingController descriptionController = TextEditingController(text: task['description']);
+    TextEditingController deadlineController = TextEditingController(
+      text: task['deadline'] != null && task['deadline'].toString().isNotEmpty
+          ? task['deadline'].toString().substring(0, 10)
+          : '',
+    );
+    String? selectedUser = task['assigned_to'];
+
+    List<String> privilegedUsers = await fetchPrivilegedUsers();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Edit Task"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: "Task Name"),
+                ),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(labelText: "Description"),
+                ),
+                TextField(
+                  controller: deadlineController,
+                  decoration: const InputDecoration(labelText: "Deadline (YYYY-MM-DD)"),
+                  keyboardType: TextInputType.datetime,
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: selectedUser,
+                  decoration: const InputDecoration(labelText: 'Assign To'),
+                  items: privilegedUsers.map((username) {
+                    return DropdownMenuItem<String>(
+                      value: username,
+                      child: Text(username),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    selectedUser = newValue;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                String updatedName = nameController.text.trim();
+                String description = descriptionController.text.trim();
+                String deadline = deadlineController.text.trim();
+                String? assignedTo = selectedUser;
+
+                if (updatedName.isEmpty || description.isEmpty || deadline.isEmpty || assignedTo == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Please fill in all fields.")),
+                  );
+                  return;
+                }
+
+                final response = await http.put(
+                  Uri.parse('http://localhost:3000/tasks/update-task-in-project'),
+                  headers: <String, String>{
+                    'Content-Type': 'application/json',
+                  },
+                  body: json.encode({
+                    'originalName': task['task_name'],
+                    'updatedName': updatedName,
+                    'description': description,
+                    'deadline': "$deadline 00:00:00",
+                    'assigned_to': assignedTo,
+                  }),
+                );
+
+                if (response.statusCode == 200) {
+                  _fetchTasks(); // reload tasks after update
+                  Navigator.of(context).pop();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Failed to update task: ${json.decode(response.body)['error']}")),
+                  );
+                }
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
+
+  Future<void> deleteTask(Map<String, dynamic> taskData) async {
+  bool confirm = await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Confirm Deletion'),
+        content: Text('Are you sure you want to delete the task "${taskData['task_name']}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirm == true) {
+    try {
+      final response = await http.delete(
+        Uri.parse('http://localhost:3000/tasks/delete-task'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'taskName': taskData['task_name'],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          tasks.remove(taskData); // Odstráni task z listu
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Task deleted successfully.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete task: ${json.decode(response.body)['error']}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error occurred while deleting task.')),
+      );
+    }
+  }
+}
+
 
   Widget _buildProjectTile(BuildContext context, Map<String, dynamic> file) {
     return Card(

@@ -257,6 +257,38 @@ router.get('/project/users-with-access', (req, res) => {
     });
   });
   
+
+// Route pre získanie projektov podľa používateľa
+router.get('/project/list-my-projects', (req, res) => {
+    const { username } = req.query;
+  
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+  
+    // Dotaz do databázy pre získanie projektov používateľa bez duplicit
+    const query = `
+      SELECT DISTINCT p.name 
+      FROM projects p
+      LEFT JOIN project_users pu ON pu.project_id = p.id
+      JOIN users u ON u.id = pu.user_id OR u.id = p.owner_id
+      WHERE u.username = ?;
+    `;
+  
+    db.query(query, [username], (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error fetching projects' });
+      }
+  
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'No projects found for this user' });
+      }
+  
+      // Posielame výsledok ako JSON
+      res.json(results);
+    });
+  });
+  
   
 
 module.exports = router;
