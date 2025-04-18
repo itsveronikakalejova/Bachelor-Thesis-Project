@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sesh/widgets/colors.dart';
+// import 'package:sesh/widgets/colors.dart';
 import 'package:sesh/widgets/sideBar.dart';
 import 'package:sesh/widgets/globals.dart' as globals;
 import 'package:http/http.dart' as http;
