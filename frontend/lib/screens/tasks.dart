@@ -130,7 +130,7 @@ class _TasksPageState extends State<TasksPage> {
   }
 
   Future<void> deleteTask(Task task, String column) async {
-    bool delete = await _showDeleteTaskDialog(task, column);
+    bool delete = await showDeleteTaskDialog(task, column);
 
     if (delete == true) {
       try {
@@ -259,7 +259,7 @@ class _TasksPageState extends State<TasksPage> {
         ),
       ),
       body: _isLoading  
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 Expanded(
@@ -272,15 +272,15 @@ class _TasksPageState extends State<TasksPage> {
                         Expanded(
                           child: Row(
                             children: [
-                              _buildTaskColumn('To Do', toDoTasks),
-                              _buildTaskColumn('Doing', doingTasks),
-                              _buildTaskColumn('Done', doneTasks),
+                              buildTaskColumn('To Do', toDoTasks),
+                              buildTaskColumn('Doing', doingTasks),
+                              buildTaskColumn('Done', doneTasks),
                             ],
                           ),
                         ),
                         const SizedBox(height: 16.0),
                         ElevatedButton(
-                          onPressed: _showAddTaskDialog,
+                          onPressed: showAddTaskDialog,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                                 vertical: 12.0, horizontal: 20.0),
@@ -306,7 +306,7 @@ class _TasksPageState extends State<TasksPage> {
   }
 
 
-  Widget _buildTaskColumn(String columnTitle, List<Task> tasks) {
+  Widget buildTaskColumn(String columnTitle, List<Task> tasks) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(8.0),
@@ -327,7 +327,7 @@ class _TasksPageState extends State<TasksPage> {
                 children: tasks.isEmpty
                     ? [Text('No tasks!')] 
                     : tasks.map((task) {
-                        return _buildTaskCard(task, columnTitle);
+                        return buildTaskCard(task, columnTitle);
                       }).toList(),
               ),
             ),
@@ -337,7 +337,7 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
-  Widget _buildTaskCard(Task task, String column) {
+  Widget buildTaskCard(Task task, String column) {
     return Card(
       color: const Color.fromARGB(255, 214, 243, 243),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
@@ -442,8 +442,6 @@ class _TasksPageState extends State<TasksPage> {
         : '',
   );
 
-
-    // Získanie názvu projektu podľa ID
     String initialProjectName = await fetchProjectName(task.projectId);
     String? selectedProject = initialProjectName;
 
@@ -564,7 +562,7 @@ class _TasksPageState extends State<TasksPage> {
     }
   }
 
-  Future<bool> _showDeleteTaskDialog(Task task, String column) async {
+  Future<bool> showDeleteTaskDialog(Task task, String column) async {
     bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -592,7 +590,7 @@ class _TasksPageState extends State<TasksPage> {
     return shouldDelete ?? false;
   }
 
-  void _showAddTaskDialog() async {
+  void showAddTaskDialog() async {
     TextEditingController taskNameController = TextEditingController();
     TextEditingController taskDescriptionController = TextEditingController();
     TextEditingController taskDeadlineController = TextEditingController();

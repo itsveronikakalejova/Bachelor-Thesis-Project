@@ -1,8 +1,16 @@
-const fs = require('fs');
-const path = require('path');
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
 const { spawn } = require("child_process");
+const router = express.Router();
 
-function compileCode(code, callback) {
+router.post("/submit-code", (req, res) => {
+    const { code } = req.body;
+
+    if (!code) {
+        return res.status(400).json({ message: "Kód je povinný." });
+    }
+
     const filePath = path.join(__dirname, "temp_code.c");
     fs.writeFileSync(filePath, code);
 
@@ -16,10 +24,20 @@ function compileCode(code, callback) {
 
     compile.on("close", (exitCode) => {
         if (exitCode !== 0) {
-            return callback({ error: "Compilation failed", details: compileError }, null);
+            console.error("Chyba pri kompilácii:", compileError);
+            return res.status(400).json({
+                message: "Kompilácia zlyhala.",
+                success: false,
+                error: compileError
+            });
         }
-        callback(null, { message: "Compilation successful" });
-    });
-}
 
-module.exports = compileCode;
+        console.log("Kompilácia prebehla úspešne.");
+        return res.json({
+            message: "Kompilácia bola úspešná.",
+            success: true
+        });
+    });
+});
+
+module.exports = router;

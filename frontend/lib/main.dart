@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-// import 'package:sesh/screens/chats.dart';
 import 'package:sesh/screens/login.dart';
 import 'package:sesh/screens/projects.dart';
 import 'package:sesh/screens/tasks.dart';
+// import 'package:sesh/screens/chats.dart';
 
 
 void main() {
@@ -20,8 +20,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginPage(),
         '/projects': (context) => const ProjectsPage(),
-        // '/chats': (context) => const ChatsPage(),
         '/tasks': (context) => const TasksPage(),
+        // '/chats': (context) => const ChatsPage(),
       },
     );
   }

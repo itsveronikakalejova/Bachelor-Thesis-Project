@@ -156,43 +156,67 @@ class _ProjectPageState extends State<ProjectPage> {
     }
   }
 
-  Future<void> compileCode(String filename) async {
-    final url = Uri.parse('http://localhost:3000/compile/$filename');
+
+  void checkForErrors() async {
+    final String code = _contentController.text;
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pole pre kód je prázdne!')),
+      );
+      return;
+    }
+
+    const String apiUrl = "http://127.0.0.1:3000/compile/submit-code";
 
     try {
-      final response = await http.get(url);
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "code": code,
+        }),
+      );
+
+      final responseData = jsonDecode(response.body);
+      String message;
 
       if (response.statusCode == 200) {
-        final result = json.decode(response.body);
-        print('Compilation result: ${result['message']}');
+        message = "Kompilácia súboru $currentFileName prebehla úspešne.\n";
       } else {
-        print('Compilation failed: ${response.body}');
+        message = responseData.containsKey('error')
+            ? "Kompilácia súboru $currentFileName zlyhala:\n${responseData['error']}"
+            : "Neznáma chyba počas kompilácie súboru $currentFileName.";
       }
+
+      _showOutputDialog(context, message);
     } catch (error) {
-      print('Error during compilation: $error');
+      _showOutputDialog(context, 'Chyba pri odosielaní požiadavky pre súbor $currentFileName:\n$error');
     }
   }
 
-  // Future<void> _fetchFileContent(int fileId, String fileName) async {
-  //   final response = await http.get(
-  //     Uri.parse('http://localhost:3000/projects/${widget.projectId}/files/$fileId'),
-  //     headers: {
-  //       'Authorization': 'Bearer ${widget.token}',
-  //     },
-  //   );
+  void _showOutputDialog(BuildContext context, String message) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Výsledok kompilácie'),
+        content: SingleChildScrollView(
+          child: Text(message),
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Zavrieť'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
 
-  //   if (response.statusCode == 200) {
-  //     final data = jsonDecode(response.body);
-  //     setState(() {
-  //       _contentController.text = data['fileData'];
-  //       currentFileName = fileName;
-  //     });
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Failed to fetch file content')),
-  //     );
-  //   }
-  // }
+
 
   Future<String> _fetchProjectName() async {
     final response = await http.get(
@@ -503,26 +527,10 @@ class _ProjectPageState extends State<ProjectPage> {
                       ),
                       child: TextButton(
                         onPressed: () {
-                          compileCode(currentFileName);
+                           onPressed: checkForErrors();
                         },
                         child: const Text(
-                          'Compile',
-                          style: TextStyle(color: myBlack),  // White text color
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: myGreen,  // Background color
-                        borderRadius: BorderRadius.circular(30.0),  // Rounded corners
-                      ),
-                      child: TextButton(
-                        onPressed: () {
-                          runCode();
-                        },
-                        child: const Text(
-                          'Run',
+                          'Check for Errors',
                           style: TextStyle(color: myBlack),  // White text color
                         ),
                       ),
@@ -536,7 +544,7 @@ class _ProjectPageState extends State<ProjectPage> {
                       child: TextButton(
                         onPressed: () async {
                           String projectName = await _fetchProjectName();
-                          showShareDialog(context, projectName, "editor");
+                          showShareDialog(context, projectName);
                         },
                         child: const Text(
                           'Share',

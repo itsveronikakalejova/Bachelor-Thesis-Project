@@ -111,7 +111,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
   }
 
   Future<void> deleteProject(Project project) async {
-    final shouldDelete = await _showDeleteProjectDialog(project.name);
+    final shouldDelete = await showDeleteProjectDialog(project.name);
     if (shouldDelete) {
       final response = await http.delete(
         Uri.parse('http://localhost:3000/projects/${project.id}'),
@@ -135,7 +135,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
     }
   }
 
-  Future<bool> _showDeleteProjectDialog(String projectName) async {
+  Future<bool> showDeleteProjectDialog(String projectName) async {
     bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -213,7 +213,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                         Expanded(
                           child: ListView(
                             children: projects.map((project) {
-                              return _buildProjectTile(context, project);
+                              return buildProjectTile(context, project);
                             }).toList(),
                           ),
                         ),
@@ -227,7 +227,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       ElevatedButton(
-                        onPressed: _showAddProjectDialog,
+                        onPressed: showAddProjectDialog,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20.0, vertical: 12.0),
@@ -258,7 +258,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
     );
   }
 
-  Widget _buildProjectTile(BuildContext context, Project project) {
+  Widget buildProjectTile(BuildContext context, Project project) {
     Color projectColor = project.isOwner ? myGreen : Colors.grey[300]!;
 
     return Card(
@@ -276,7 +276,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
             if (value == 'delete') {
               deleteProject(project);
             } else if (value == 'share') {
-              showShareDialog(context, project.name, 'read');
+              showShareDialog(context, project.name);
             } else if (value == 'edit') {
               editProjectName(context, project.name);
             }
@@ -365,7 +365,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
   }
 
 
-  void _showAddProjectDialog() {
+  void showAddProjectDialog() {
     TextEditingController projectNameController = TextEditingController();
 
     showDialog(

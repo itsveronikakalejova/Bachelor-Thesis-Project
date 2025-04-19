@@ -57,6 +57,27 @@ class SideBar extends StatelessWidget {
             ),
           ),
 
+          // CHATS
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          //   child: Container(
+          //     decoration: BoxDecoration(
+          //       color: myWhite,
+          //       borderRadius: BorderRadius.circular(12.0),
+          //     ),
+          //     child: ListTile(
+          //       leading: const Icon(Icons.task_alt_sharp, color: myBlack),
+          //       title: const Text(
+          //         'Chats',
+          //         style: TextStyle(color: myBlack),
+          //       ),
+          //       onTap: () {
+          //         Navigator.pushNamed(context, '/chats');
+          //       },
+          //     ),
+          //   ),
+          // ),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Container(
@@ -100,14 +121,3 @@ class SideBar extends StatelessWidget {
   }
 }
 
-
-     // ListTile(
-          //   leading: const Icon(Icons.chat, color: Colors.white),
-          //   title: const Text(
-          //     'Chats',
-          //     style: TextStyle(color: Colors.white),
-          //   ),
-          //   onTap: () {
-          //     Navigator.pushNamed(context, '/chats');
-          //   },
-          // ),

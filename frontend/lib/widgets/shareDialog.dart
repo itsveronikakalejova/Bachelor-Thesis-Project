@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-void showShareDialog(BuildContext context, String projectName, String privilege) {
+void showShareDialog(BuildContext context, String projectName) {
   TextEditingController userController = TextEditingController();
   String statusMessage = '';
 
@@ -16,7 +16,7 @@ void showShareDialog(BuildContext context, String projectName, String privilege)
         body: jsonEncode({
           'projectName': projectName,
           'userName': userName,
-          'privilege': privilege,
+          'privilege': 'editor'
         }),
       );
 
