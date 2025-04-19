@@ -831,12 +831,118 @@ class _ProjectPageState extends State<ProjectPage> {
           file['file_name'],
           style: const TextStyle(fontSize: 18, color: Colors.black),
         ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.drive_file_rename_outline_sharp, color: Colors.blue),
+              onPressed: () {
+                editFileName(context, file['id']);
+                _fetchFileContent(file['id'], file['file_name']);
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.red),
+              onPressed: () {
+                deleteFile(file['id']);
+              },
+            ),
+          ],
+        ),
         onTap: () {
           _fetchFileContent(file['id'], file['file_name']);
         },
       ),
     );
   }
+
+
+  void editFileName(BuildContext context, int fileId) {
+    final TextEditingController _nameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit File Name'),
+          content: TextField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              hintText: 'Enter new file name',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newName = _nameController.text.trim();
+
+                if (newName.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('File name cannot be empty')),
+                  );
+                  return;
+                }
+
+                try {
+                  final response = await http.put(
+                    Uri.parse('http://localhost:3000/project/update-file/$fileId'),
+                    headers: {'Content-Type': 'application/json'},
+                    body: jsonEncode({'newName': newName}),
+                  );
+
+                  if (response.statusCode == 200) {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('File name updated successfully')),
+                    );
+                    // Voliteľné: obnov zoznam
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: ${response.body}')),
+                    );
+                  }
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Network error: $e')),
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+  Future<void> deleteFile(int fileId) async {
+    final url = Uri.parse('http://localhost:3000/project/delete-file/$fileId');
+
+    try {
+      final response = await http.delete(url);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('File deleted successfully')),
+        );
+        _fetchProjectFiles(); 
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete file: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting file: $e')),
+      );
+    }
+  }
+
 
   void showTaskDetailsDialog(Map<String, dynamic> task) {
     showDialog(

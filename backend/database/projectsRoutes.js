@@ -286,6 +286,74 @@ router.get('/project/list-my-projects', (req, res) => {
     });
   });
   
+
+router.delete('/project/delete-file/:fileId', (req, res) => {
+    const { projectId, fileId } = req.params;
   
+    const sql = "DELETE FROM project_files WHERE id = ?";
+    db.query(sql, [fileId], (err, results) => {
+      if (err) {
+        console.error("Error deleting file:", err);
+        return res.status(500).json({ error: 'Failed to delete file' });
+      }
+  
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ message: 'File not found or already deleted' });
+      }
+  
+      res.status(200).json({ message: 'File deleted successfully' });
+    });
+  });
+  
+router.put('/project/update-file/:fileId', (req, res) => {
+    const { fileId } = req.params;
+    const { newName } = req.body;
+
+    if (!newName) {
+        return res.status(400).json({ error: 'New file name is required' });
+    }
+
+    const sql = "UPDATE project_files SET file_name = ? WHERE id = ?";
+    db.query(sql, [newName, fileId], (err, result) => {
+        if (err) {
+            console.error("Error updating file name:", err);
+            return res.status(500).json({ error: 'Failed to update file name' });
+        }
+        res.status(200).json({ message: 'File name updated successfully' });
+    });
+});
+
+router.put('/projects/update-name/:projectName', (req, res) => {
+    const { projectName } = req.params;
+    const { newName } = req.body;
+
+    if (!projectName || !newName) {
+        return res.status(400).json({ error: 'Missing required fields: projectName or newName' });
+    }
+
+    const findProjectSql = 'SELECT id FROM projects WHERE name = ?';
+    db.query(findProjectSql, [projectName], (err, results) => {
+        if (err) {
+            console.error('Error finding project:', err);
+            return res.status(500).json({ error: 'Database error while finding project' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+
+        const projectId = results[0].id;
+        const updateNameSql = 'UPDATE projects SET name = ? WHERE id = ?';
+        db.query(updateNameSql, [newName, projectId], (err, updateResult) => {
+            if (err) {
+                console.error('Error updating project name:', err);
+                return res.status(500).json({ error: 'Failed to update project name' });
+            }
+
+            return res.status(200).json({ message: 'Project name updated successfully' });
+        });
+    });
+});
+
 
 module.exports = router;

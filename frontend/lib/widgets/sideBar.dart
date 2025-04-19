@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sesh/widgets/colors.dart';
+import 'package:sesh/widgets/globals.dart' as globals;
 
 class SideBar extends StatelessWidget {
   final void Function()? onProjectsTap;
@@ -16,7 +17,7 @@ class SideBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: myGreen,
+      backgroundColor: myBlack,
       child: Column(
         children: [
           const SizedBox(height: 16.0),
@@ -25,7 +26,17 @@ class SideBar extends StatelessWidget {
             width: 100,
             height: 100,
           ),
+          const SizedBox(height: 8.0),
+          Text(
+            globals.username.isNotEmpty ? 'Hello, ${globals.username}!' : 'Welcome!',
+            style: const TextStyle(
+              color: myWhite,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 16.0),
+
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Container(
@@ -34,7 +45,7 @@ class SideBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12.0),
               ),
               child: ListTile(
-                leading: const Icon(Icons.folder, color: myBlack),
+                leading: const Icon(Icons.folder_open_rounded, color: myBlack),
                 title: const Text(
                   'Projects',
                   style: TextStyle(color: myBlack),
@@ -46,16 +57,6 @@ class SideBar extends StatelessWidget {
             ),
           ),
 
-          // ListTile(
-          //   leading: const Icon(Icons.chat, color: Colors.white),
-          //   title: const Text(
-          //     'Chats',
-          //     style: TextStyle(color: Colors.white),
-          //   ),
-          //   onTap: () {
-          //     Navigator.pushNamed(context, '/chats');
-          //   },
-          // ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Container(
@@ -64,7 +65,7 @@ class SideBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12.0),
               ),
               child: ListTile(
-                leading: const Icon(Icons.task, color: myBlack),
+                leading: const Icon(Icons.task_alt_sharp, color: myBlack),
                 title: const Text(
                   'Tasks',
                   style: TextStyle(color: myBlack),
@@ -75,7 +76,9 @@ class SideBar extends StatelessWidget {
               ),
             ),
           ),
+
           const Spacer(),
+
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: ElevatedButton.icon(
@@ -87,8 +90,7 @@ class SideBar extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 12.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               ),
             ),
           ),
@@ -97,3 +99,15 @@ class SideBar extends StatelessWidget {
     );
   }
 }
+
+
+     // ListTile(
+          //   leading: const Icon(Icons.chat, color: Colors.white),
+          //   title: const Text(
+          //     'Chats',
+          //     style: TextStyle(color: Colors.white),
+          //   ),
+          //   onTap: () {
+          //     Navigator.pushNamed(context, '/chats');
+          //   },
+          // ),

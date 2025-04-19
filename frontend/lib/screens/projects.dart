@@ -277,19 +277,26 @@ class _ProjectsPageState extends State<ProjectsPage> {
               deleteProject(project);
             } else if (value == 'share') {
               showShareDialog(context, project.name, 'read');
+            } else if (value == 'edit') {
+              editProjectName(context, project.name);
             }
           },
-          itemBuilder: (BuildContext context) => [
-            const PopupMenuItem<String>(
-              value: 'delete',
-              child: Text('Delete Project'),
+          itemBuilder: (BuildContext context) => const [
+            PopupMenuItem<String>(
+              value: 'edit',
+              child: Text('Edit Name'),
             ),
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'share',
               child: Text('Share Project'),
             ),
+            PopupMenuItem<String>(
+              value: 'delete',
+              child: Text('Delete Project'),
+            ),
           ],
         ),
+
         onTap: () {
           Navigator.push(
             context,
@@ -304,6 +311,56 @@ class _ProjectsPageState extends State<ProjectsPage> {
           );
         },
       ),
+    );
+  }
+
+  void editProjectName(BuildContext context, String currentName) {
+    final TextEditingController _controller = TextEditingController(text: currentName);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Project Name'),
+          content: TextField(
+            controller: _controller,
+            decoration: const InputDecoration(labelText: 'New Project Name'),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text('Save'),
+              onPressed: () async {
+                final newName = _controller.text.trim();
+                if (newName.isNotEmpty && newName != currentName) {
+                  final response = await http.put(
+                    Uri.parse('http://localhost:3000/projects/update-name/$currentName'),
+                    headers: {'Content-Type': 'application/json'},
+                    body: jsonEncode({'newName': newName}),
+                  );
+
+                  if (response.statusCode == 200) {
+                    Navigator.of(context).pop();
+                    fetchProjects();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Project name updated successfully')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Failed to update project name')),
+                    );
+                  }
+                }
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
