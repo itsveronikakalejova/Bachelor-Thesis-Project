@@ -156,6 +156,23 @@ class _ProjectPageState extends State<ProjectPage> {
     }
   }
 
+  Future<void> compileCode(String filename) async {
+    final url = Uri.parse('http://localhost:3000/compile/$filename');
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        print('Compilation result: ${result['message']}');
+      } else {
+        print('Compilation failed: ${response.body}');
+      }
+    } catch (error) {
+      print('Error during compilation: $error');
+    }
+  }
+
   // Future<void> _fetchFileContent(int fileId, String fileName) async {
   //   final response = await http.get(
   //     Uri.parse('http://localhost:3000/projects/${widget.projectId}/files/$fileId'),
@@ -448,58 +465,105 @@ class _ProjectPageState extends State<ProjectPage> {
               children: [
                 Row(
                   children: [
-                    TextButton(
-                      onPressed: _showAddFileDialog,
-                      child: const Text(
-                        'Add File',
-                        style: TextStyle(color: Colors.black),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: myGreen,  // Background color
+                        borderRadius: BorderRadius.circular(30.0),  // Rounded corners
+                      ),
+                      child: TextButton(
+                        onPressed: _showAddFileDialog,
+                        child: const Text(
+                          'Add File',
+                          style: TextStyle(color: myBlack),  // White text color
+                        ),
                       ),
                     ),
-                    TextButton(
-                      onPressed: saveTextInput,
-                      child: const Text(
-                        'Save File',
-                        style: TextStyle(color: Colors.black),
+                    const SizedBox(width: 8),  // Space between buttons
+                    Container(
+                      decoration: BoxDecoration(
+                        color: myGreen,  // Background color
+                        borderRadius: BorderRadius.circular(30.0),  // Rounded corners
+                      ),
+                      child: TextButton(
+                        onPressed: saveTextInput,
+                        child: const Text(
+                          'Save File',
+                          style: TextStyle(color: myBlack),  // White text color
+                        ),
                       ),
                     ),
                   ],
                 ),
                 Row(
                   children: [
-                    TextButton(
-                      onPressed: () {
-
-                      },
-                      child: const Text(
-                        'Compile and Run',
-                        style: TextStyle(color: Colors.black),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: myGreen,  // Background color
+                        borderRadius: BorderRadius.circular(30.0),  // Rounded corners
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          compileCode(currentFileName);
+                        },
+                        child: const Text(
+                          'Compile',
+                          style: TextStyle(color: myBlack),  // White text color
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
-                    TextButton(
-                      onPressed: () async {
-                        String projectName = await _fetchProjectName();
-                        showShareDialog(context, projectName, "editor");
-                      },
-                      child: const Text(
-                        'Share',
-                        style: TextStyle(color: Colors.black),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: myGreen,  // Background color
+                        borderRadius: BorderRadius.circular(30.0),  // Rounded corners
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          runCode();
+                        },
+                        child: const Text(
+                          'Run',
+                          style: TextStyle(color: myBlack),  // White text color
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16),
-                    TextButton(
-                      onPressed: () async {
-                        String projectName = await _fetchProjectName();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => GroupChatScreen(projectName: projectName, projectId: widget.projectId),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Open Group Chat',
-                        style: TextStyle(color: Colors.black),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: myGreen,  // Background color
+                        borderRadius: BorderRadius.circular(30.0),  // Rounded corners
+                      ),
+                      child: TextButton(
+                        onPressed: () async {
+                          String projectName = await _fetchProjectName();
+                          showShareDialog(context, projectName, "editor");
+                        },
+                        child: const Text(
+                          'Share',
+                          style: TextStyle(color: myBlack),  // White text color
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: myGreen,  // Background color
+                        borderRadius: BorderRadius.circular(30.0),  // Rounded corners
+                      ),
+                      child: TextButton(
+                        onPressed: () async {
+                          String projectName = await _fetchProjectName();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GroupChatScreen(projectName: projectName, projectId: widget.projectId),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Open Group Chat',
+                          style: TextStyle(color: myBlack),  // White text color
+                        ),
                       ),
                     ),
                   ],
@@ -1125,5 +1189,7 @@ class _ProjectPageState extends State<ProjectPage> {
       throw Exception('Failed to fetch privileged users: ${response.body}');
     }
   }
+  
+  void runCode() {}
 
 }

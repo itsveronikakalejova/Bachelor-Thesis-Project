@@ -10,6 +10,7 @@ const userRoutes = require('./database/userRoutes');
 const shareProjectRoutes = require('./controllers/shareProject'); 
 const tasksRoutes = require('./database/tasks');
 const messagesRoutes = require('./database/messages');
+const compilerRoutes = require('./database/compileCode');
 
 const app = express();
 const server = http.createServer(app);
@@ -26,6 +27,7 @@ app.use('/api', userRoutes);
 app.use(shareProjectRoutes); 
 app.use('/tasks', tasksRoutes);
 app.use('/messages', messagesRoutes);
+app.use('/', compilerRoutes);
 
 initializeSocket(server); 
 
