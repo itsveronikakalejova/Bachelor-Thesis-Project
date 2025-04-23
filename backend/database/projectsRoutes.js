@@ -150,6 +150,27 @@ router.get('/projects/:projectId/files/:fileId', (req, res) => {
     });
 });
 
+router.get('/projects/:projectId/file-type/:fileName', (req, res) => {
+    const { projectId, fileName } = req.params;
+    const sql = "SELECT file_type FROM project_files WHERE project_id = ? AND file_name = ?";
+    
+    db.query(sql, [projectId, fileName], (err, results) => {
+        if (err) {
+            console.error("Error fetching file type:", err);
+            return res.status(500).json({ error: 'Failed to fetch file type' });
+        }
+        
+        if (results.length > 0) {
+            res.json({ 
+                fileId: fileName,
+                fileType: results[0].file_type 
+            });
+        } else {
+            res.status(404).json({ error: 'File not found' });
+        }
+    });
+});
+
 router.get('/projects/:projectId', (req, res) => {
     const { projectId } = req.params;
     const sql = "SELECT name FROM projects WHERE id = ?";

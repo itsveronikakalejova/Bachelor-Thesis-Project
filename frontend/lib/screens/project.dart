@@ -29,6 +29,7 @@ class _ProjectPageState extends State<ProjectPage> {
   bool isLoading = false;
   List<Map<String, dynamic>> projectFiles = [];
   String currentFileName = 'untitled.txt';
+  String currentFileType = ''; 
 
   @override
   void initState() {
@@ -119,6 +120,11 @@ class _ProjectPageState extends State<ProjectPage> {
       setState(() {
         _contentController.text = data['fileData'];
         currentFileName = fileName;
+        fetchFileType(fileName).then((type) {
+          setState(() {
+            currentFileType = type;
+          });
+        });
       });
       _connectToSocketForFile(fileId);
     } else {
@@ -271,6 +277,31 @@ class _ProjectPageState extends State<ProjectPage> {
     }
   }
 
+  Future<String> fetchFileType(String fileName) async {
+    if (currentFileName.isEmpty) {
+      throw Exception('No file selected');
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/projects/${widget.projectId}/file-type/$currentFileName'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['fileType'];
+      } else {
+        throw Exception('Failed to fetch file type: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching file type: $e');
+      return 'unknown';
+    }
+  }
+ 
 
   Future<void> updateTaskStatus(String taskName, bool isDone) async {
     String newStatus = isDone ? 'done' : 'todo'; 
@@ -336,7 +367,7 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 
 
-  Future<void> addFileToDatabase(String fileName) async {
+  Future<void> addFileToDatabase(String fileName, String filetype) async {
     final text = _contentController.text;
 
     final response = await http.post(
@@ -347,7 +378,7 @@ class _ProjectPageState extends State<ProjectPage> {
       },
       body: jsonEncode({
         'fileName': fileName,
-        'fileType': 'text/x-c',
+        'fileType': filetype,
         'fileData': text,
         'uploadedBy': widget.userId.toString(), 
       }),
@@ -365,42 +396,67 @@ class _ProjectPageState extends State<ProjectPage> {
     }
   }
 
-  void _showAddFileDialog() {
+  void showAddFileDialog() {
     final TextEditingController fileNameController = TextEditingController();
+    bool isCCode = true; 
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add File'),
-          content: TextField(
-            controller: fileNameController,
-            decoration: const InputDecoration(
-              labelText: 'File Name',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final fileName = fileNameController.text;
-                if (fileName.isNotEmpty) {
-                  addFileToDatabase(fileName);
-                  Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('File name cannot be empty')),
-                  );
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Add File'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: fileNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'File Name',
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(isCCode ? 'C Code' : 'Document'),
+                      Switch(
+                        value: isCCode,
+                        onChanged: (bool value) {
+                          setState(() {
+                            isCCode = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final fileName = fileNameController.text;
+                    if (fileName.isNotEmpty) {
+                      addFileToDatabase(fileName, isCCode ? 'C_code' : 'document');
+                      Navigator.of(context).pop();
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('File name cannot be empty')),
+                      );
+                    }
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -495,7 +551,7 @@ class _ProjectPageState extends State<ProjectPage> {
                         borderRadius: BorderRadius.circular(30.0),  // Rounded corners
                       ),
                       child: TextButton(
-                        onPressed: _showAddFileDialog,
+                        onPressed: showAddFileDialog,
                         child: const Text(
                           'Add File',
                           style: TextStyle(color: myBlack),  // White text color
@@ -518,20 +574,21 @@ class _ProjectPageState extends State<ProjectPage> {
                     ),
                   ],
                 ),
-                Row(
-                  children: [
+               Row(
+                children: [
+                  if (currentFileType == 'C_code') // Only show button for C code files
                     Container(
                       decoration: BoxDecoration(
-                        color: myGreen,  // Background color
-                        borderRadius: BorderRadius.circular(30.0),  // Rounded corners
+                        color: myGreen,
+                        borderRadius: BorderRadius.circular(30.0),
                       ),
                       child: TextButton(
                         onPressed: () {
-                           onPressed: checkForErrors();
+                          checkForErrors();
                         },
                         child: const Text(
                           'Check for Errors',
-                          style: TextStyle(color: myBlack),  // White text color
+                          style: TextStyle(color: myBlack),
                         ),
                       ),
                     ),
