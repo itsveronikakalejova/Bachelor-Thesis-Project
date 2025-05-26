@@ -35,10 +35,12 @@ class _ProjectsPageState extends State<ProjectsPage> {
     );
 
     if (response.statusCode == 200) {
+      // ziskaj projekty z odpovede a preved ich na zoznam fetchedProjects
       List<Project> fetchedProjects = (json.decode(response.body) as List)
           .map((data) => Project.fromJson(data))
           .toList();
 
+      // vymaz duplicitne projekty
       setState(() {
         projects = [];
         for (var project in fetchedProjects) {
@@ -51,6 +53,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
         isLoading = false;
       });
 
+      // zisti, kto je vlastnik projektu
+      // a nastav isOwner pre kazdy projekt
+      // isOwner bude true, ak je vlastnik projektu aktualny uzivatel
       for (var project in projects) {
         fetchProjectOwner(project);
       }
@@ -63,7 +68,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
   Future<void> fetchProjectOwner(Project project) async {
     final response = await http.get(
-      Uri.parse('http://localhost:3000/project/owner/${project.name}'), 
+      Uri.parse('http://localhost:3000/projects/owner/${project.name}'), 
       headers: {
         'Authorization': 'Bearer ${globals.token}',
       },
@@ -72,20 +77,17 @@ class _ProjectsPageState extends State<ProjectsPage> {
     if (response.statusCode == 200) {
       final ownerData = json.decode(response.body);
       final ownerName = ownerData['ownerName'];
-
-      print("Project: ${project.name}, Owner: $ownerName, Current User: ${globals.username}");
-
+      // nastav isOwner pre projekt na true, ak je vlastnik aktualny uzivatel
       setState(() {
         project.isOwner = ownerName == globals.username;
       });
-
-      print("Project: ${project.name}, isOwner: ${project.isOwner}");
-    } else {
-      print("Error fetching owner for project ${project.name}: ${response.statusCode}");
-    }
+    } 
   }
 
 
+  // pridaj do databazy novy projekt s menom name a
+  // s autorom username a
+  // pridaj ho do zoznamu projects
   Future<void> addProject(String name) async {
     final response = await http.post(
       Uri.parse('http://localhost:3000/projects'),
@@ -110,6 +112,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
 
   }
 
+  // zmaz projekt s id project.id z databazy a zoznamu projects
   Future<void> deleteProject(Project project) async {
     final shouldDelete = await showDeleteProjectDialog(project.name);
     if (shouldDelete) {
@@ -135,7 +138,11 @@ class _ProjectsPageState extends State<ProjectsPage> {
     }
   }
 
+  // zobrazi dialog s potvrdenim zmazania projektu
   Future<bool> showDeleteProjectDialog(String projectName) async {
+    // premenna, ktora nadobuda hodnotu true, ak uzivatel potvrdi zmazanie projektu
+    // inak nadobuda hodnotu false a
+    // ak uzivatel z dialogu odide, tiez nadobuda hodnotu false
     bool? shouldDelete = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -213,6 +220,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                         Expanded(
                           child: ListView(
                             children: projects.map((project) {
+                              // pre kazdy projekt vytvor widget s jeho informaciami
                               return buildProjectTile(context, project);
                             }).toList(),
                           ),
@@ -226,6 +234,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      // vytvor tlacidlo pre pridanie noveho projektu
+                      // pri kliknuti na tlacidlo sa zobrazi dialog 
+                      // pre pridanie noveho projektu
                       ElevatedButton(
                         onPressed: showAddProjectDialog,
                         style: ElevatedButton.styleFrom(
@@ -244,6 +255,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                     ],
                   ),
                 ),
+                // spodna cast obrazovky, paticka
                 Container(
                   padding: const EdgeInsets.all(8.0),
                   color: const Color.fromARGB(255, 34, 34, 34),
@@ -259,6 +271,8 @@ class _ProjectsPageState extends State<ProjectsPage> {
   }
 
   Widget buildProjectTile(BuildContext context, Project project) {
+    // nastav farbu projektu na zelenú, ak je vlastník projektu aktuálny užívateľ
+    // inak nastav farbu na sivú
     Color projectColor = project.isOwner ? myGreen : Colors.grey[300]!;
 
     return Card(
@@ -271,16 +285,23 @@ class _ProjectsPageState extends State<ProjectsPage> {
           style: const TextStyle(fontSize: 18, color: Colors.black),
         ),
         trailing: PopupMenuButton<String>(
+          // vytvor popup menu pre moznosti projektu
           icon: const Icon(Icons.more_vert, color: Colors.black),
           onSelected: (String value) {
             if (value == 'delete') {
+              // vymaze projekt z databazy a zoznamu projektov
               deleteProject(project);
             } else if (value == 'share') {
+              // zobrazi dialog pre zdieľanie projektu
               showShareDialog(context, project.name);
             } else if (value == 'edit') {
+              // zobrazi dialog pre editovanie mena projektu
               editProjectName(context, project.name);
             }
           },
+          // vytvor moznosti v popup menu
+          // moznosti su: edit, share, delete
+          // pri kliknuti na moznost sa vykona prislusna akcia vyssie
           itemBuilder: (BuildContext context) => const [
             PopupMenuItem<String>(
               value: 'edit',
@@ -296,7 +317,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
             ),
           ],
         ),
-
+        // pri kliknuti na projekt sa prejde na stranku projektu
+        // teda vyvojove prostredie projektu, subor project.dart
+        // a preda sa mu token, userId, username a projectId
         onTap: () {
           Navigator.push(
             context,
@@ -334,6 +357,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
               },
             ),
             ElevatedButton(
+              // pri kliknuti na tlacidlo sa ulozi nove meno projektu a
+              // aktualizuje sa v databaze
+              // iba ak je nove meno ine ako aktualne meno
               child: const Text('Save'),
               onPressed: () async {
                 final newName = _controller.text.trim();
@@ -345,6 +371,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                   );
 
                   if (response.statusCode == 200) {
+                    // aktualizuj meno projektu v zozname projektov
                     Navigator.of(context).pop();
                     fetchProjects();
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -390,6 +417,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
               onPressed: () {
                 final projectName = projectNameController.text;
                 if (projectName.isNotEmpty) {
+                  // pridaj projekt s menom projectName do databazy a do zoznamu projektov
                   addProject(projectName);
                   Navigator.of(context).pop();
                 } else {

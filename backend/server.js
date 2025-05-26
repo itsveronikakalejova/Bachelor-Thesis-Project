@@ -1,34 +1,34 @@
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
-const routes = require("./controllers/routes");
-const { initializeSocket } = require("./controllers/socket"); 
 const bodyParser = require('body-parser');
-const authRoutes = require('./database/authRoutes');
-const projectsRoutes = require('./database/projectsRoutes');
-const userRoutes = require('./database/userRoutes'); 
-const shareProjectRoutes = require('./controllers/shareProject'); 
-const tasksRoutes = require('./database/tasks');
-const messagesRoutes = require('./database/messages');
-const compilingRoutes = require('./controllers/compiler');
+
+const { initializeSocket } = require("./socket/socketInitialization"); 
+
+const authRoutes = require('./routes/authRoutes');
+const projectsRoutes = require('./routes/projectsRoutes');
+const shareRoutes = require('./routes/shareRoutes'); 
+const tasksRoutes = require('./routes/tasksRoutes');
+const messagesRoutes = require('./routes/messagesRoutes');
+const compileRoutes = require('./routes/compileRoutes');
 
 const app = express();
 const server = http.createServer(app);
+
 app.use(cors({
     origin: "*",
     methods: ["GET", "POST"],
 }));
+
 app.use(express.json());
-app.use(routes); 
 app.use(bodyParser.json());
 app.use('/auth', authRoutes);
 app.use('/', projectsRoutes);
-app.use('/api', userRoutes); 
-app.use(shareProjectRoutes); 
+app.use('/share', shareRoutes); 
 app.use('/tasks', tasksRoutes);
 app.use('/messages', messagesRoutes);
-app.use('/compile', compilingRoutes);
+app.use('/compile', compileRoutes);
 
 initializeSocket(server); 
 
-server.listen(3000, () => console.log("Server bezi na porte 3000."));
+server.listen(3000, () => console.log("Server runs on port 3000."));

@@ -8,6 +8,7 @@ void showShareDialog(BuildContext context, String projectName) {
 
   Future<void> shareProject(String userName) async {
     try {
+      //  posielanie mena projektu, mena uzivatela a privilegia na server
       final response = await http.post(
         Uri.parse("http://localhost:3000/share"),
         headers: {

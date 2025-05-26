@@ -6,6 +6,7 @@ import 'package:sesh/widgets/sideBar.dart';
 import 'package:sesh/widgets/globals.dart' as globals;
 import 'package:intl/intl.dart';
 
+// trieda Task, ktorá reprezentuje úlohu
 class Task {
   final String name;
   final String tag;
@@ -21,6 +22,7 @@ class Task {
     required this.status,
   });
 
+  // factory metóda na vytvorenie inštancie Task z JSON objektu
   factory Task.fromJson(Map<String, dynamic> json) {
     return Task(
       name: json['task_name'],
@@ -41,15 +43,13 @@ class TasksPage extends StatefulWidget {
 }
 
 class _TasksPageState extends State<TasksPage> {
+  // kluc pre Scaffold, ktory umoznuje otvorenie a zatvorenie bocneho menu
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  // zoznamy pre rozne stavy uloh
   List<Task> toDoTasks = [];
   List<Task> doingTasks = [];
   List<Task> doneTasks = [];
-
   bool _isLoading = true; 
-  List<String> users = [];
-  String selectedPerson = "";
-
   bool isDrawerOpen = false;
 
   @override
@@ -67,9 +67,9 @@ class _TasksPageState extends State<TasksPage> {
     try {
       final response = await http.get(Uri.parse('http://localhost:3000/tasks/my-tasks/?userName=${globals.username}'));
       if (response.statusCode == 200) {
+        // dekodovanie JSON odpovede
         List<dynamic> data = json.decode(response.body);
-        print('Fetched data: $data');
-
+        // filtrovanie uloh podla statusu a vytvorenie instancii Task
         setState(() {
           toDoTasks = data
               .where((task) => task['status'] == 'todo')
@@ -93,10 +93,11 @@ class _TasksPageState extends State<TasksPage> {
       setState(() {
         _isLoading = false;
       });
-      print(error);
     }
   }
 
+  // metoda na ziskanie ID projektu podla mena
+  // pouziva sa na priradenie ulohy k projektu v databaze
   Future<int?> fetchProjectIdByName(String projectName) async {
     try {
       final response = await http.get(
@@ -104,18 +105,19 @@ class _TasksPageState extends State<TasksPage> {
       );
 
       if (response.statusCode == 200) {
+        // dekodovanie JSON odpovede
         final data = json.decode(response.body);
         return data['project_id']; 
       } else {
-        print('Error: Unable to fetch project id');
         return null;
       }
     } catch (e) {
-      print('Error: $e');
       return null;
     }
   }
 
+  // metoda na ziskanie mena projektu podla ID
+  // pouziva sa na zobrazenie mena projektu v detaile ulohy
   Future<String> fetchProjectName(int? projectId) async {
     final response = await http.get(
       Uri.parse('http://localhost:3000/projects/${projectId}'),
@@ -129,7 +131,9 @@ class _TasksPageState extends State<TasksPage> {
     }
   }
 
+  // metoda na zmazanie ulohy
   Future<void> deleteTask(Task task, String column) async {
+    // zobrazenie dialogu na potvrdenie zmazania
     bool delete = await showDeleteTaskDialog(task, column);
 
     if (delete == true) {
@@ -144,6 +148,7 @@ class _TasksPageState extends State<TasksPage> {
           }),
         );
 
+        // ak je odpoved uspesna, odstrani ulohu z prislusneho zoznamu
         if (response.statusCode == 200) {
           setState(() {
             if (column == 'To Do') {
@@ -154,17 +159,20 @@ class _TasksPageState extends State<TasksPage> {
               doneTasks.remove(task);
             }
           });
-          print('Task deleted successfully');
-        } else {
-          print('Failed to delete task: ${json.decode(response.body)['error']}');
         }
       } catch (error) {
-        print('Error deleting task: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting task: $error'),
+          ),
+        );
       }
     }
   }
 
-
+  // metoda na presun ulohy medzi stlpce
+  // parametre su ulohy, z ktoreho stlpca a do ktoreho stlpca sa ma uloha presunut
+  // aktualizuje sa aj status ulohy v databaze
   Future<void> moveTask(Task task, String fromColumn, String toColumn) async {
     setState(() {
       if (fromColumn == 'To Do') {
@@ -193,6 +201,7 @@ class _TasksPageState extends State<TasksPage> {
       dbStatus = 'done';
     }
 
+    // aktualizacia statusu ulohy v databaze
     try {
       final response = await http.put(
         Uri.parse('http://localhost:3000/tasks/update-status'),
@@ -206,12 +215,24 @@ class _TasksPageState extends State<TasksPage> {
       );
 
       if (response.statusCode == 200) {
-        print('Task status updated successfully');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Task status updated successfully'),
+          ),
+        );
       } else {
-        print('Failed to update task status: ${json.decode(response.body)['error']}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update task status: ${json.decode(response.body)['error']}'),
+          ),
+        );
       }
     } catch (error) {
-      print('Error updating task status: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating task status: $error'),
+        ),
+      );
     }
   }
 
@@ -272,6 +293,7 @@ class _TasksPageState extends State<TasksPage> {
                         Expanded(
                           child: Row(
                             children: [
+                              // vytvorenie stlpcov pre ulohy podla ich statusu
                               buildTaskColumn('To Do', toDoTasks),
                               buildTaskColumn('Doing', doingTasks),
                               buildTaskColumn('Done', doneTasks),
@@ -279,6 +301,7 @@ class _TasksPageState extends State<TasksPage> {
                           ),
                         ),
                         const SizedBox(height: 16.0),
+                        // tlacidlo na pridanie novej ulohy
                         ElevatedButton(
                           onPressed: showAddTaskDialog,
                           style: ElevatedButton.styleFrom(
@@ -291,6 +314,7 @@ class _TasksPageState extends State<TasksPage> {
                     ),
                   ),
                 ),
+                // spodna cast obrazovky, paticka
                 Container(
                   padding: const EdgeInsets.all(8.0),
                   color: const Color.fromARGB(255, 34, 34, 34),
@@ -305,7 +329,9 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
-
+  // metoda na vytvorenie stlpca s ulohami
+  // zobrazuje nazov stlpca a zoznam uloh
+  // parametre su nazov stlpca a zoznam uloh
   Widget buildTaskColumn(String columnTitle, List<Task> tasks) {
     return Expanded(
       child: Container(
@@ -324,9 +350,12 @@ class _TasksPageState extends State<TasksPage> {
             const SizedBox(height: 16.0),
             Expanded(
               child: ListView(
+                // ak je zoznam uloh prazdny, zobrazi sa prazdna sprava
+                // inak sa zobrazia karty s ulohami
                 children: tasks.isEmpty
-                    ? [Text('No tasks!')] 
+                    ? [] 
                     : tasks.map((task) {
+                        // vytvorenie karty pre kazdu ulohu
                         return buildTaskCard(task, columnTitle);
                       }).toList(),
               ),
@@ -337,6 +366,7 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
+  // metoda na vytvorenie karty pre ulohu
   Widget buildTaskCard(Task task, String column) {
     return Card(
       color: const Color.fromARGB(255, 214, 243, 243),
@@ -351,7 +381,10 @@ class _TasksPageState extends State<TasksPage> {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // zobrazenie projektu, ku ktoremu je uloha priradena
               FutureBuilder<String>(
+                // ziskanie mena projektu podla ID projektu
+                // pouziva sa FutureBuilder na asynchronne ziskanie dat
                 future: fetchProjectName(task.projectId),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -372,6 +405,7 @@ class _TasksPageState extends State<TasksPage> {
                   }
                 },
               ),
+              // zobrazenie popisu ulohy (tag)
               Text(
                 task.tag, 
                 style: const TextStyle(fontSize: 20, color: Colors.grey),
@@ -382,12 +416,16 @@ class _TasksPageState extends State<TasksPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (column == 'To Do')
+                // tlacidlo na presun ulohy z To Do do Doing  
+                // smer doprava
                 IconButton(
                   icon: const Icon(Icons.arrow_forward, color: Colors.orangeAccent),
                   onPressed: () {
                     moveTask(task, column, 'Doing');
                   },
                 ),
+              // tlacidlo na presun ulohy z Doing do Done/To Do
+              // smer do lava a doprava
               if (column == 'Doing')
                 Row(
                   children: [
@@ -405,6 +443,8 @@ class _TasksPageState extends State<TasksPage> {
                     ),
                   ],
                 ),
+              // tlacidlo na presun ulohy z Done do Doing
+              // smer do lava
               if (column == 'Done')
                 IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.orangeAccent),
@@ -412,12 +452,14 @@ class _TasksPageState extends State<TasksPage> {
                     moveTask(task, column, 'Doing');
                   },
                 ),
+              // tlacidlo na editaciu a zmazanie ulohy
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.blue),
                 onPressed: () {
                   editTaskDialog(task); 
                 },
               ),
+              // tlacidlo na zmazanie ulohy
               IconButton(
                 icon: const Icon(Icons.close, color: Colors.red),
                 onPressed: () {
@@ -436,13 +478,18 @@ class _TasksPageState extends State<TasksPage> {
     TextEditingController taskNameController = TextEditingController(text: task.name);
     TextEditingController taskTagController = TextEditingController(text: task.tag);
     TextEditingController deadlineController = TextEditingController(
+    // ziskanie datumu deadline v lokalnom case
+    // ak je deadline null, pouzije sa prazdny retazec
+    // rozdeli datum na datum a cas a zobrazi iba datum
     // ignore: unnecessary_null_comparison
     text: task.deadline != null
         ? DateTime.tryParse(task.deadline)?.toLocal().toString().split(' ')[0] ?? ''
         : '',
   );
 
+    // ziskanie mena projektu podla ID projektu
     String initialProjectName = await fetchProjectName(task.projectId);
+    // premenna pre vybrany projekt, predvolene je to meno projektu ulohy
     String? selectedProject = initialProjectName;
 
     showDialog(
@@ -471,6 +518,7 @@ class _TasksPageState extends State<TasksPage> {
                   ),
                   const SizedBox(height: 8),
                   FutureBuilder<List<String>>(
+                    // ziskanie zoznamu projektov pre dropdown menu
                     future: fetchProjectList(globals.username),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -505,6 +553,7 @@ class _TasksPageState extends State<TasksPage> {
                 child: const Text('Cancel'),
               ),
               TextButton(
+                // tlacidlo na ulozenie zmien
                 onPressed: () async {
                   if (taskNameController.text.isEmpty ||
                       taskTagController.text.isEmpty ||
@@ -515,6 +564,7 @@ class _TasksPageState extends State<TasksPage> {
                     );
                     return;
                   }
+                  // posielanie aktualizovanych dat na server
                   final response = await http.put(
                     Uri.parse('http://localhost:3000/tasks/update-task-in-tasks'),
                     headers: <String, String>{'Content-Type': 'application/json'},
@@ -549,9 +599,11 @@ class _TasksPageState extends State<TasksPage> {
   }
 
 
-
+  // metoda na ziskanie zoznamu projektov pre dropdown menu
+  // pouziva sa na zobrazenie projektov pri editacii ulohy
+  // viaze sa na prave prihlaseneho uzivatela
   Future<List<String>> fetchProjectList(String username) async {
-    final response = await http.get(Uri.parse('http://localhost:3000/project/list-my-projects?username=$username'));
+    final response = await http.get(Uri.parse('http://localhost:3000/project-list/list-my-projects?username=$username'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
@@ -562,6 +614,7 @@ class _TasksPageState extends State<TasksPage> {
     }
   }
 
+  // metoda na zobrazenie dialogu na potvrdenie zmazania ulohy
   Future<bool> showDeleteTaskDialog(Task task, String column) async {
     bool? shouldDelete = await showDialog<bool>(
       context: context,
@@ -590,12 +643,15 @@ class _TasksPageState extends State<TasksPage> {
     return shouldDelete ?? false;
   }
 
+  // metoda na zobrazenie dialogu pre pridanie novej ulohy
   void showAddTaskDialog() async {
     TextEditingController taskNameController = TextEditingController();
     TextEditingController taskDescriptionController = TextEditingController();
     TextEditingController taskDeadlineController = TextEditingController();
     TextEditingController taskProjectController = TextEditingController();
+    // priradenie prave prihlaseneho uzivatela ako 'assignedTo'
     String assignedTo = globals.username; 
+    // predvolene status ulohy je 'todo'
     String status = 'todo';  
 
     showDialog(
@@ -642,6 +698,7 @@ class _TasksPageState extends State<TasksPage> {
               },
               child: const Text('Cancel'),
             ),
+            // tlacidlo na pridanie ulohy
             TextButton(
               onPressed: () async {
                 String deadline = taskDeadlineController.text;
@@ -649,6 +706,7 @@ class _TasksPageState extends State<TasksPage> {
                   DateTime parsedDeadline = DateFormat('yyyy-MM-dd').parse(deadline);
                   String formattedDeadline = DateFormat('yyyy-MM-dd HH:mm:ss').format(parsedDeadline);
 
+                  // ziskanie ID projektu podla mena
                   int? projectId = await fetchProjectIdByName(taskProjectController.text);
 
                   if (projectId == null) {
@@ -657,7 +715,7 @@ class _TasksPageState extends State<TasksPage> {
                     );
                     return;
                   }
-
+                  // posielanie dat na server pre pridanie novej ulohy
                   final response = await http.post(
                     Uri.parse('http://localhost:3000/tasks/add-task'),
                     headers: <String, String>{
@@ -672,7 +730,7 @@ class _TasksPageState extends State<TasksPage> {
                       'deadline': formattedDeadline
                     }),
                   );
-
+                  // ak je odpoved uspesna, pridame novu ulohu do zoznamu
                   if (response.statusCode == 201) {
                     setState(() {
                       toDoTasks.add(Task(

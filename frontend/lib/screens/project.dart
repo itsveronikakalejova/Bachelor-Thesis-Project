@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-// import 'package:intl/intl.dart';
-import 'package:sesh/screens/groupChatScreen.dart';
+import 'package:sesh/screens/groupChat.dart';
 import 'package:sesh/widgets/colors.dart';
 import 'package:sesh/widgets/sideBar.dart';
-// import 'package:sesh/widgets/project_model.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:sesh/widgets/shareDialog.dart';
 import 'package:http/http.dart' as http;
@@ -34,63 +32,17 @@ class _ProjectPageState extends State<ProjectPage> {
   @override
   void initState() {
     super.initState();
-    // Inicializácia socketu
     socket = IO.io("http://localhost:3000", <String, dynamic>{
       "transports": ["websocket"],
       "autoConnect": false,
     });
     socket.connect();
     
-    // Ostatné inicializácie
     _fetchProjectFiles();
     _fetchTasks(); 
   }
 
-  // void _connectToSocket() {
-  //   socket = IO.io("http://localhost:3000", <String, dynamic>{
-  //     "transports": ["websocket"],
-  //     "autoConnect": false,
-  //   });
-  //   if (socket.connected) return; 
-
-  //   socket = IO.io("http://localhost:3000", <String, dynamic>{
-  //     "transports": ["websocket"],
-  //     "autoConnect": false,
-  //   });
-
-  //   socket.connect();
-
-  //   socket.onConnect((_) {
-  //     print("Connected to socket");
-  //     socket.emit("join-document", widget.projectId);
-  //   });
-
-  //   socket.on("load-document", (data) {
-  //     if (mounted) {
-  //       setState(() {
-  //         _contentController.text = data;
-  //       });
-  //     }
-  //   });
-
-  //   socket.on("update-document", (content) {
-  //     if (mounted) {
-  //       setState(() {
-  //         _contentController.text = content;
-  //       });
-  //     }
-  //   });
-
-  //   socket.onDisconnect((_) {
-  //     print("Socket disconnected");
-  //   });
-
-  //   socket.onError((error) {
-  //     print("Socket error: $error");
-  //   });
-  // }
-
-  void _connectToSocketForFile(int fileId) {
+  void connectToSocketForFile(int fileId) {
     if (activeFileId != null) {
       socket.emit('close-file', activeFileId);
     }
@@ -109,7 +61,7 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Future<void> _fetchFileContent(int fileId, String fileName) async {
     final response = await http.get(
-      Uri.parse('http://localhost:3000/projects/${widget.projectId}/files/$fileId'),
+      Uri.parse('http://localhost:3000/project/${widget.projectId}/files/$fileId'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
       },
@@ -126,7 +78,7 @@ class _ProjectPageState extends State<ProjectPage> {
           });
         });
       });
-      _connectToSocketForFile(fileId);
+      connectToSocketForFile(fileId);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to fetch file content')),
@@ -134,7 +86,7 @@ class _ProjectPageState extends State<ProjectPage> {
     }
   }
 
-  void _sendTextUpdate(String text) {
+  void sendTextUpdate(String text) {
     if (activeFileId != null) {
       socket.emit('file-update', {
         'fileId': activeFileId,
@@ -145,7 +97,7 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Future<void> _fetchProjectFiles() async {
     final response = await http.get(
-      Uri.parse('http://localhost:3000/projects/${widget.projectId}/files'),
+      Uri.parse('http://localhost:3000/project/${widget.projectId}/files'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
       },
@@ -167,7 +119,7 @@ class _ProjectPageState extends State<ProjectPage> {
     final String code = _contentController.text;
     if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pole pre kód je prázdne!')),
+        const SnackBar(content: Text('Code is empty')),
       );
       return;
     }
@@ -187,16 +139,16 @@ class _ProjectPageState extends State<ProjectPage> {
       String message;
 
       if (response.statusCode == 200) {
-        message = "Kompilácia súboru $currentFileName prebehla úspešne.\n";
+        message = "Compilation of $currentFileName was successful.\n";
       } else {
         message = responseData.containsKey('error')
-            ? "Kompilácia súboru $currentFileName zlyhala:\n${responseData['error']}"
-            : "Neznáma chyba počas kompilácie súboru $currentFileName.";
+            ? "Compilation of $currentFileName failed:\n${responseData['error']}"
+            : "Unknown error while compiling $currentFileName.";
       }
 
       _showOutputDialog(context, message);
     } catch (error) {
-      _showOutputDialog(context, 'Chyba pri odosielaní požiadavky pre súbor $currentFileName:\n$error');
+      _showOutputDialog(context, 'Error while sending request for $currentFileName:\n$error');
     }
   }
 
@@ -205,13 +157,13 @@ class _ProjectPageState extends State<ProjectPage> {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: const Text('Výsledok kompilácie'),
+        title: const Text('Compilation Output'),
         content: SingleChildScrollView(
           child: Text(message),
         ),
         actions: [
           TextButton(
-            child: const Text('Zavrieť'),
+            child: const Text('Close'),
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -226,7 +178,7 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Future<String> _fetchProjectName() async {
     final response = await http.get(
-      Uri.parse('http://localhost:3000/projects/${widget.projectId}'),
+      Uri.parse('http://localhost:3000/project/${widget.projectId}'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
       },
@@ -284,7 +236,7 @@ class _ProjectPageState extends State<ProjectPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/projects/${widget.projectId}/file-type/$currentFileName'),
+        Uri.parse('http://localhost:3000/project/${widget.projectId}/file-type/$currentFileName'),
         headers: {
           'Authorization': 'Bearer ${widget.token}',
         },
@@ -342,7 +294,7 @@ class _ProjectPageState extends State<ProjectPage> {
     final text = _contentController.text;
 
     final response = await http.post(
-      Uri.parse('http://localhost:3000/projects/${widget.projectId}/saveText'),
+      Uri.parse('http://localhost:3000/project/${widget.projectId}/saveText'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.token}',
@@ -371,7 +323,7 @@ class _ProjectPageState extends State<ProjectPage> {
     final text = _contentController.text;
 
     final response = await http.post(
-      Uri.parse('http://localhost:3000/projects/${widget.projectId}/files'),
+      Uri.parse('http://localhost:3000/project/${widget.projectId}/files'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.token}',
@@ -621,7 +573,7 @@ class _ProjectPageState extends State<ProjectPage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => GroupChatScreen(projectName: projectName, projectId: widget.projectId),
+                              builder: (context) => GroupChat(projectName: projectName, projectId: widget.projectId),
                             ),
                           );
                         },
@@ -673,7 +625,7 @@ class _ProjectPageState extends State<ProjectPage> {
                               hintText: 'Type your code here...',
                               hintStyle: TextStyle(color: Colors.grey),
                             ),
-                            onChanged: _sendTextUpdate,
+                            onChanged: sendTextUpdate,
                             textAlignVertical: TextAlignVertical.top,
                             keyboardType: TextInputType.multiline,
                           ),
@@ -1106,6 +1058,15 @@ class _ProjectPageState extends State<ProjectPage> {
   }
 
   Widget _buildDetailText(String label, String value) {
+    if (label == "Deadline" && value != 'No deadline') {
+      try {
+        DateTime date = DateTime.parse(value);
+        value = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      } catch (e) {
+        print('Error parsing date: $e');
+      }
+    }
+
     return RichText(
       text: TextSpan(
         style: const TextStyle(fontSize: 16, color: Colors.black),
@@ -1241,7 +1202,7 @@ class _ProjectPageState extends State<ProjectPage> {
     }
 
     final response = await http.get(
-      Uri.parse('http://localhost:3000/project/users-with-access?project_name=$projectName'),
+      Uri.parse('http://localhost:3000/project-users/users-with-access?project_name=$projectName'),
       headers: {
         'Authorization': 'Bearer ${widget.token}',
       },
@@ -1254,7 +1215,4 @@ class _ProjectPageState extends State<ProjectPage> {
       throw Exception('Failed to fetch privileged users: ${response.body}');
     }
   }
-  
-  void runCode() {}
-
 }
