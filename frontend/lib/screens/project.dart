@@ -992,7 +992,6 @@ class _ProjectPageState extends State<ProjectPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('File name updated successfully')),
                     );
-                    // Voliteľné: obnov zoznam
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Error: ${response.body}')),
