@@ -27,29 +27,40 @@ class _ProjectPageState extends State<ProjectPage> {
   bool isLoading = false;
   List<Map<String, dynamic>> projectFiles = [];
   String currentFileName = 'untitled.txt';
-  String currentFileType = ''; 
+  String currentFileType = 'Document'; 
 
   @override
   void initState() {
     super.initState();
+    // inicializacia socketu 
     socket = IO.io("http://localhost:3000", <String, dynamic>{
+      // pouzivame websocket transport
       "transports": ["websocket"],
+      // nepouzivame automaticke pripojenie
       "autoConnect": false,
     });
+    // pripojime sa na socket
     socket.connect();
-    
     _fetchProjectFiles();
     _fetchTasks(); 
   }
 
+  // sluzi na prepojenie pouzivatelov, 
+  // ktori pracuju na rovnakom subore
   void connectToSocketForFile(int fileId) {
+    // ak je uz nejaky subor otvoreny, zavrieme ho
     if (activeFileId != null) {
+      // POSIELANIE (frontend -> server)
       socket.emit('close-file', activeFileId);
     }
-
+    // nastavime aktivny subor
     activeFileId = fileId;
+    // POSIELANIE (frontend -> server)
+    // pripojenie k novemu aktivnemu suboru
     socket.emit('open-file', fileId);
 
+    // nastavime listener na zmenu suboru
+    // PRIJIMANIE (server -> frontend)
     socket.on('file-changed', (data) {
       if (mounted && data['fileId'] == activeFileId) {
         setState(() {
@@ -86,6 +97,7 @@ class _ProjectPageState extends State<ProjectPage> {
     }
   }
 
+  // aktualizuje subor
   void sendTextUpdate(String text) {
     if (activeFileId != null) {
       socket.emit('file-update', {
